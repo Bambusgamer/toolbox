@@ -8,7 +8,7 @@ const toolbox = require('../');
 
 const timestamp = () => ({ text: moment().format('YYYY-MM-DD HH:mm:ss'), unix: moment().unix() });
 const stringify = (obj) => typeof obj == 'object' ? JSON.stringify(obj, 10, 2) : obj;
-const trace = () => new Error().stack.split('\n').slice(3).join('\n').trim();
+const trace = () => new Error().stack.split('\n').slice(4).join('\n').trim();
 
 module.exports = class Logger {
     static called = false;
