@@ -2,6 +2,10 @@ const express = require('express');
 const axios = require('axios');
 const Logger = require('./logger');
 
+/**
+ * @file modules/config.js - Config module of the toolbox
+ * @type {Config} Config - The Config class
+ */
 module.exports.default, module.exports = class Config {
     #CONFIGSERVER = null;
     #APPLICATIONID = null;

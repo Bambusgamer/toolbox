@@ -128,7 +128,6 @@ module.exports = class Logger {
      * @param {array} data Array of Promises to log
      */
     static fatal(data) {
-        console.log(toolbox.Config._env.toolbox.trace);
         this.console(data, 'FATAL');
         this.write(data, 'FATAL');
         this.send(data, 'FATAL');
