@@ -38,7 +38,7 @@ module.exports.default, module.exports = class Config {
                 if (!res[0]?.data ||
                     !res[1]?.data ||
                     !res[2]?.data) return Logger.warn(`No configuration found on server ${this.#CONFIGSERVER}`);
-                for (key in this.#lastConfigKeys) {
+                for (const key in this.#lastConfigKeys) {
                     delete this[key]; delete Config.config[key];
                 }
                 for (const key in this.#lastPublicKeys) {
@@ -73,7 +73,7 @@ module.exports.default, module.exports = class Config {
         if (this.#state != 'loaded') return;
         const app = express();
         app.post('/refresh', (req, res) => {
-            this.loadConfiguration().then(() => {
+            this.#loadConfiguration().then(() => {
                 res.sendStatus(200);
             });
         });
