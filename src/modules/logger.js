@@ -145,7 +145,7 @@ module.exports = class Logger {
         if (!Logger.called) {
             Logger.called = true;
             Logger.path = logpath ? _path.join(this.#getInstPath(), logpath) : null;
-            Logger.filestream = new Console({ stdout: fs.createWriteStream(Logger.path, { flags: 'a+' }), stderr: fs.createWriteStream(Logger.path, { flags: 'a+' }) });
+            Logger.filestream = Logger.path ? new Console({ stdout: fs.createWriteStream(Logger.path, { flags: 'a+' }), stderr: fs.createWriteStream(Logger.path, { flags: 'a+' }) }) : null;
             Logger.logserver = logserver;
             Logger.logservertoken = logservertoken;
             Logger.appid = appid;
