@@ -38,6 +38,7 @@ module.exports = class Logger {
                 break;
             case 'INFOT':
                 console.log(chalk.green(`[${timestamp().text}] | ${stringify(data)}${toolbox.Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
+                break;
             case 'INFO':
                 console.log(chalk.blue(`[${timestamp().text}] | ${stringify(data)}${toolbox.Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
                 break;
