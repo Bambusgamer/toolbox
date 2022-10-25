@@ -59,7 +59,7 @@ module.exports = class Logger {
      * @param {string} level The level of the log [LOG, INFO, INFOH, INFOT, WARN, ERROR, FATAL] (default: LOG) wich will be used to label the output
      */
     static write(data, level) {
-        if (Logger.filestream) Logger.filestream.log(`[${timestamp().text}] |`, ...(level != 'FATAL' ? [data] : [data[0], data[1]]), toolbox.Config._env?.toolbox?.trace && level != 'FATAL' ? '' : `\n${trace()}`);
+        if (Logger.filestream) Logger.filestream.log(`[${timestamp().text}] |`, ...(level != 'FATAL' ? [data] : [data[0], data[1]]), !toolbox.Config._env?.toolbox?.trace && level != 'FATAL' ? '' : `\n${trace()}`);
     }
     /**
      * Logs content to a log server if a server was provided
