@@ -14,7 +14,7 @@ module.exports = class Mongoose {
         }).catch((err) => Logger.fatal([`Mongoose connection error`, err]));
         mongoose.connection.on('connected', () => Logger.info(`√ Connected to MongoDB!`));
         mongoose.connection.on('disconnected', async () => {
-            Logger.warn(`██ Disconnected from MongoDB!`);
+            Logger.error(`██ Disconnected from MongoDB!`);
             await client.wait(5000);
             Logger.infoh(`██ Attempting to reconnect to MongoDB...`);
             connect();

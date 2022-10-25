@@ -15,6 +15,7 @@ module.exports.default, module.exports = class Config {
     #lastConfigKeys = [];
     #lastPublicKeys = [];
     #lastEnvKeys = [];
+    static App = null;
     static config = {};
     static public = {};
     static _env = {};
@@ -80,6 +81,7 @@ module.exports.default, module.exports = class Config {
         app.listen(this.public.api[this.#NODEID], () => {
             console.log(`Node: ${this.public.api[this.#NODEID]}`);
         });
+        Config.App = app;
     }
     /**
      * Initializes the config server connection data
