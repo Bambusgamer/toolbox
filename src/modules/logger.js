@@ -32,7 +32,10 @@ module.exports = class Logger {
     #getInstPath() {
         const stack = new Error().stack;
         const frame = stack.split('\n')[3].trim();
-        const path = frame.match(/at\s+(.+):\d+:\d+/)[1].replace(/\\/g, '/').replace(/\/[^/]+$/, '');
+        // Credits to discord@A7mooz#2962 for the regex
+        const regex = /(?:[A-Z]:)?(?:(\/|\\)(\w\.?)+)+\1?/g;
+        const match = regex.exec(frame)[0].replace(/\\/g, '/');
+        const path = match.split('/').slice(0, -1).join('/');
         return path;
     }
     /**
