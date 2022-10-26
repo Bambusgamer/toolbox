@@ -135,7 +135,7 @@ module.exports = class Handler {
                 if (file.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const event = require(_path.join(this.#eventsPath, file));
                 if (!(event instanceof EventBuilder)) return;
-                if (client._events.includes(event.name)) {
+                if (client._events[event.name]) {
                     if (typeof (client._events[event.name]) != 'function') {
                         client.removeListener(event.name, client._events[event.name][client._events[event.name].length - 1]);
                     } else client.removeListener(event.name, client._events[event.name]);
