@@ -1,10 +1,11 @@
 exports.Config = require('./modules/config');
 exports.Logger = require('./modules/logger');
+exports.Handler = require('./modules/handler');
 exports.AntiCrash = require('./modules/anticrash');
 exports.Mongoose = require('./modules/mongoose');
 exports.App = require('./modules/config').App;
-exports.Util = require('./util/util');
 exports.CommandBuilder = require('./classes/command');
 exports.EventBuilder = require('./classes/event');
 exports.InteractionBuilder = require('./classes/interaction');
 exports.builders = require('./util/builders');
+exports.Util = require('./util/util');
