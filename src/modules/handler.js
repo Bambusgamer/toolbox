@@ -132,7 +132,7 @@ module.exports = class Handler {
             const loadFile = (file) => {
                 const fileName = file.split('\\').pop().split('.')[0];
                 delete require.cache[require.resolve(_path.join(this.#eventsPath, file))];
-                if (!file.startsWith('_')) return Logger.infog(`${fileName} skipped`);
+                if (file.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const event = require(_path.join(this.#eventsPath, file));
                 if (!(event instanceof EventBuilder)) return;
                 if (client._events.includes(event.name)) {
