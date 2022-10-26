@@ -221,15 +221,15 @@ module.exports = class Handler {
                 if (!(command instanceof CommandBuilder)) return;
                 command.hydrate(this.#client);
                 if (command.hasSlash) {
-                    this.slashCommands.set(command.customId, command);
+                    this.slashCommands.set(command.customId, command.slash);
                 };
                 if (command.hasBetaSlash) {
-                    this.BetaSlashCommands.set(command.betaCustomId, command);
+                    this.BetaSlashCommands.set(command.betaCustomId, command.betaSlash);
                 };
                 if (command.hasText) {
-                    this.textCommands.set(command.name, command);
+                    this.textCommands.set(command.name, command.text);
                     for (const alias of command.aliases) {
-                        this.textCommands.set(alias, command);
+                        this.textCommands.set(alias, command.text);
                     };
                 };
                 Logger.infog(`${fileName} loaded`);
