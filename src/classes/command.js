@@ -83,16 +83,19 @@ module.exports = class CommandBuilder {
      * @param {object} slash The global commands data and callback
      * @param {SlashCommandDataBuilder} global.data The global slash command data
      * @param {function} slash.callback The global slash command callback
+     * @param {supportClasses} slash.callback.supportClasses The support classes
      * @param {Client} slash.callback.client The client
      * @param {CommandInteraction} slash.callback.interaction The interaction
      * @param {object} betaSlash The beta commands data and callback
      * @param {SlashCommandDataBuilder} betaSlash.data The beta slash command data
      * @param {function} betaSlash.callback The beta slash command callback
+     * @param {supportClasses} betaSlash.callback.supportClasses The support classes
      * @param {Client} betaSlash.callback.client The client
      * @param {CommandInteraction} betaSlash.callback.interaction The interaction
      * @param {object} text The text commands data and callback
      * @param {CommandDataBuilder} text.data The text command data
      * @param {function} text.callback The text command callback
+     * @param {supportClasses} text.callback.supportClasses The support classes
      * @param {Client} text.callback.client The client
      * @param {Message} text.callback.message The message
      * @param {string[]} text.callback.args The arguments
@@ -114,12 +117,15 @@ module.exports = class CommandBuilder {
         if (!client) throw new Error('Client is required to hydrate command');
         if (this.hasSlash) {
             this.slash.data = this.slash.data(new SlashCommandBuilder(), client, CommandBuilder.supportClasses);
+            this.slash.callback = this.slash.callback.bind(null, CommandBuilder.supportClasses);
         }
         if (this.hasBetaSlash) {
             this.betaSlash.data = this.betaSlash.data(new SlashCommandBuilder(), client, CommandBuilder.supportClasses);
+            this.betaSlash.callback = this.betaSlash.callback.bind(null, CommandBuilder.supportClasses);
         }
         if (this.hasText) {
             this.text.data = this.text.data(client, CommandBuilder.supportClasses);
+            this.text.callback = this.text.callback.bind(null, CommandBuilder.supportClasses);
         }
     }
 

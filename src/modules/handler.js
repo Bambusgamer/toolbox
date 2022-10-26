@@ -126,15 +126,15 @@ module.exports = class Handler {
         let success = true;
         const client = this.#client;
         try {
-            const elements = fs.readdirSync(this.#commandsPath, { withFileTypes: true });
+            const elements = fs.readdirSync(this.#eventsPath, { withFileTypes: true });
             const folders = elements.filter((element) => element.isDirectory());
             const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
             const loadFile = (file) => {
                 const fileName = file.split('\\').pop().split('.')[0];
-                delete require.cache[require.resolve(_path.join(folderPath, file.name))];
+                delete require.cache[require.resolve(_path.join(this.#eventsPath, file.name))];
                 if (!file.name.startsWith('_')) return Logger.infog(`${fileName} skipped`);
-                const event = require(_path.join(folderPath, file.name));
-                if (event instanceof EventBuilder) return;
+                const event = require(_path.join(this.#eventsPath, file.name));
+                if (!(event instanceof EventBuilder)) return;
                 if (client._events.includes(event.name)) {
                     if (typeof (client._events[event.name]) != 'function') {
                         client.removeListener(event.name, client._events[event.name][client._events[event.name].length - 1]);
@@ -152,7 +152,7 @@ module.exports = class Handler {
                 const folderElements = fs.readdirSync(folderPath, { withFileTypes: true });
                 const folderFiles = folderElements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
                 for (const file of folderFiles) {
-                    loadFile(file);
+                    loadFile(_path.join(folder.name, file.name));
                 };
             };
             for (const file of files) {
@@ -180,7 +180,7 @@ module.exports = class Handler {
                 delete require.cache[require.resolve(_path.join(this.#interactionsPath, file))];
                 if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const interaction = require(_path.join(this.#interactionsPath, file));
-                if (!interaction instanceof InteractionBuilder) return;
+                if (!(interaction instanceof InteractionBuilder)) return;
                 this.interactions.set(interaction.name, interaction);
                 Logger.infog(`${fileName} loaded`);
             };
@@ -218,7 +218,7 @@ module.exports = class Handler {
                 delete require.cache[require.resolve(_path.join(this.#commandsPath, file))];
                 if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const command = require(_path.join(this.#commandsPath, file));
-                if (!command instanceof CommandBuilder) return;
+                if (!(command instanceof CommandBuilder)) return;
                 command.hydrate(this.#client);
                 if (command.hasSlash) {
                     this.slashCommands.set(command.customId, command);
