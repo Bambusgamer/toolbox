@@ -13,7 +13,7 @@ module.exports = {
     'rules': {
         'linebreak-style': ['error', 'windows'],
         'max-len': ['error', {
-            'code': 120,
+            'code': 124,
             'ignoreComments': true,
             'ignoreStrings': true,
             'ignoreTemplateLiterals': true,

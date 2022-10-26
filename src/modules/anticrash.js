@@ -18,6 +18,7 @@ module.exports = class AntiCrash {
         if (!AntiCrash.called) {
             AntiCrash.called = true;
             this.#start();
+            Logger.info(`AntiCrash module initialized`);
         } else throw new Error('AntiCrash can only be called once');
     }
 };

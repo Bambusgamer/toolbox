@@ -4,13 +4,21 @@ const chalk = require('chalk');
 const axios = require('axios');
 const fs = require('fs');
 const _path = require('path');
-const toolbox = require('../');
 
 const timestamp = () => ({ text: moment().format('YYYY-MM-DD HH:mm:ss'), unix: moment().unix() });
 const stringify = (obj) => typeof obj == 'object' ? JSON.stringify(obj, 10, 2) : obj;
 const trace = () => new Error().stack.split('\n').slice(4).join('\n').trim();
+const colors = {
+    white: chalk.white,
+    blue: chalk.blue,
+    yellow: chalk.yellow,
+    green: chalk.green,
+    red: chalk.red,
+    orange: chalk.hex('#FFA500'),
+};
 
 module.exports = class Logger {
+    // Static fields
     static called = false;
     static path = null;
     static server = null;
@@ -18,13 +26,14 @@ module.exports = class Logger {
     static appid = null;
     static filestream = null;
     /**
-     * Returns the path from where the logger was called
+     * Returns the path from where the Handler was called
      * @return {string} path of the instance
      */
     #getInstPath() {
         const stack = new Error().stack;
-        const frame = stack.split('\n')[3];
-        return _path.dirname(frame.split('at ')[1].split(':')[0].replace(__dirname, ''));
+        const frame = stack.split('\n')[3].trim();
+        const path = frame.match(/\((.*):[0-9]+:[0-9]+\)/)[1].split('\\').slice(0, -1).join('\\');
+        return path;
     }
     /**
      * Logs content to the console
@@ -32,24 +41,28 @@ module.exports = class Logger {
      * @param {string} level The level of the log [LOG, INFO, INFOH, INFOT, WARN, ERROR, FATAL] (default: LOG) wich will be used to color the output
      */
     static console(data, level) {
+        const Config = require('./config');
         switch (level) {
-            case 'INFOH':
-                console.log(chalk.yellow(`${stringify(data)}${toolbox.Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
+            case 'INFOY':
+                console.log(colors.yellow(`${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
                 break;
-            case 'INFOT':
-                console.log(chalk.green(`[${timestamp().text}] | ${stringify(data)}${toolbox.Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
+            case 'INFOG':
+                console.log(colors.green(`[${timestamp().text}] | ${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
                 break;
             case 'INFO':
-                console.log(chalk.blue(`[${timestamp().text}] | ${stringify(data)}${toolbox.Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
+                console.log(colors.blue(`[${timestamp().text}] | ${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
+                break;
+            case 'WARN':
+                console.log(colors.orange(`[${timestamp().text}] | ${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
                 break;
             case 'ERROR':
-                console.log(chalk.red(`[${timestamp().text}] | ${stringify(data)}${toolbox.Config._env.toolbox?.trace ? `\n${trace()}` : ''}`));
+                console.log(colors.red(`[${timestamp().text}] | ${stringify(data)}${Config._env.toolbox?.trace ? `\n${trace()}` : ''}`));
                 break;
             case 'FATAL':
-                console.log(chalk.redBright(`[${timestamp().text}] |`), data[0], data[1]);
+                console.log(colors.red(`[${timestamp().text}] |`), data[0], data[1] || '');
                 break;
             default:
-                console.log(chalk.white(`[${timestamp().text}] | ${stringify(data)}${toolbox.Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
+                console.log(colors.white(`[${timestamp().text}] | ${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
                 break;
         }
     }
@@ -59,7 +72,8 @@ module.exports = class Logger {
      * @param {string} level The level of the log [LOG, INFO, INFOH, INFOT, WARN, ERROR, FATAL] (default: LOG) wich will be used to label the output
      */
     static write(data, level) {
-        if (Logger.filestream) Logger.filestream.log(`[${timestamp().text}] |`, ...(level != 'FATAL' ? [data] : [data[0], data[1]]), !toolbox.Config._env?.toolbox?.trace && level != 'FATAL' ? '' : `\n${trace()}`);
+        const Config = require('./config');
+        if (Logger.filestream) Logger.filestream.log(...[`[${timestamp().text}] |`, ...(level != 'FATAL' ? [data] : [data[0], data[1]]), !Config._env?.toolbox?.trace && level != 'FATAL' ? '' : `\n${trace()}`].map((obj) => typeof obj == 'string' ? obj.replace(/^\n+|\n+$/g, '') : obj));
     }
     /**
      * Logs content to a log server if a server was provided
@@ -80,7 +94,8 @@ module.exports = class Logger {
         }
     }
     /**
-     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an default log (white)
+     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an default log
+     * white
      * @param {string} data String to log
      */
     static log(data) {
@@ -89,7 +104,8 @@ module.exports = class Logger {
         this.send(data, 'LOG');
     }
     /**
-     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info (blue)
+     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
+     * blue
      * @param {string} data String to log
      */
     static info(data) {
@@ -98,25 +114,38 @@ module.exports = class Logger {
         this.send(data, 'INFO');
     }
     /**
-     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info (yellow)
+     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
+     * yellow
      * @param {string} data String to log
      */
-    static infoh(data) {
-        this.console(data, 'INFOH');
-        this.write(data, 'INFOH');
-        this.send(data, 'INFOH');
+    static infoy(data) {
+        this.console(data, 'INFOY');
+        this.write(data, 'INFOY');
+        this.send(data, 'INFOY');
     }
     /**
-     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info (green)
+     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
+     * green
      * @param {string} data String to log
      */
-    static infot(data) {
-        this.console(data, 'INFOT');
-        this.write(data, 'INFOT');
-        this.send(data, 'INFOT');
+    static infog(data) {
+        this.console(data, 'INFOG');
+        this.write(data, 'INFOG');
+        this.send(data, 'INFOG');
     }
     /**
-     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a error (red)
+     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a warning
+     * orange
+     * @param {string} data String to log
+     */
+    static warn(data) {
+        this.console(data, 'WARN');
+        this.write(data, 'WARN');
+        this.send(data, 'WARN');
+    }
+    /**
+     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a error
+     * red
      * @param {string} data String to log
     */
     static error(data) {
@@ -125,7 +154,8 @@ module.exports = class Logger {
         this.send(data, 'ERROR');
     }
     /**
-     * Logs content of the AntiCrash module to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a fatal (red)
+     * Logs content of the AntiCrash module to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a fatal
+     * red
      * @param {array} data Array of Promises to log
      */
     static fatal(data) {
@@ -136,13 +166,14 @@ module.exports = class Logger {
     /**
      * Initializes the logger
      * @constructor
-     * @param {Object} param0 The options for the logger (_env.toolbox)
-     * @param {string} param0.logpath The path to the log file relative to from where the constructor is called
-     * @param {string} param0.logserver The url to the log server
-     * @param {string} param0.logservertoken The token for the log server
-     * @param {string} param0.appid The appid for the log server
+     * @param {Object} options The options for the logger (_env.toolbox)
+     * @param {string} options.logpath The path to the log file relative to from where the constructor is called
+     * @param {string} options.logserver The url to the log server
+     * @param {string} options.logservertoken The token for the log server
+     * @param {string} options.appid The appid for the log server
      */
-    constructor({ logpath, logserver, logservertoken, appid }) {
+    constructor(options) {
+        const { logpath, logserver, logservertoken, appid } = options;
         if (!Logger.called) {
             Logger.called = true;
             Logger.path = logpath ? _path.join(this.#getInstPath(), logpath) : null;
@@ -150,6 +181,7 @@ module.exports = class Logger {
             Logger.logserver = logserver;
             Logger.logservertoken = logservertoken;
             Logger.appid = appid;
+            Logger.info(`Logger module initialized`);
         } else throw new Error('Logger is already initialized');
     }
 };

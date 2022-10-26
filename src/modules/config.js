@@ -1,12 +1,7 @@
 const express = require('express');
 const axios = require('axios');
-const Logger = require('./logger');
 
-/**
- * @file modules/config.js - Config module of the toolbox
- * @type {Config} Config - The Config class
- */
-module.exports.default, module.exports = class Config {
+module.exports = class Config {
     #CONFIGSERVER = null;
     #APPLICATIONID = null;
     #NODEID = null;
@@ -25,6 +20,7 @@ module.exports.default, module.exports = class Config {
      * @return {Promise<void>}
      */
     async #loadConfiguration() {
+        const Logger = require('./logger');
         await Promise.all([
             axios.get(`${this.#CONFIGSERVER}/config/${this.#APPLICATIONID}`, {
                 headers: { token: this.#CONFIGSERVERTOKEN },
@@ -71,15 +67,16 @@ module.exports.default, module.exports = class Config {
      * @return {void} Returns nothing
      */
     #startServer() {
+        const Logger = require('./logger');
         if (this.#state != 'loaded') return;
         const app = express();
-        app.post('/refresh', (req, res) => {
+        app.post('/Config/reload', (req, res) => {
             this.#loadConfiguration().then(() => {
                 res.sendStatus(200);
             });
         });
         app.listen(this.public.api[this.#NODEID], () => {
-            console.log(`Node: ${this.public.api[this.#NODEID]}`);
+            Logger.infog(`Node: ${this.public.api[this.#NODEID]}`);
         });
         Config.App = app;
     }
@@ -91,12 +88,14 @@ module.exports.default, module.exports = class Config {
      * @param {string} node The node id
      */
     constructor({ server, token, app, node }) {
+        const Logger = require('./logger');
         this.#CONFIGSERVER = server;
         this.#CONFIGSERVERTOKEN = token;
         this.#APPLICATIONID = app;
         this.#NODEID = node;
         this.public = {};
         this._env = {};
+        Logger.info(`Config module initialized`);
     }
     /**
      * Starts the config server and loads the configuration to make it staticly available

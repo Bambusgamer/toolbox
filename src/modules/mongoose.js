@@ -4,19 +4,19 @@ const Config = require('./config');
 
 module.exports = class Mongoose {
     static called = false;
+    #uri = null;
     /**
      * @private
      */
     #start() {
-        if (!Config?._env?.toolbox?.database) throw new Error('No database config present');
-        const connect = () => mongoose.connect(Config._env.toolbox.database, {
+        const connect = () => mongoose.connect(this.#uri, {
             useUnifiedTopology: true,
-        }).catch((err) => Logger.fatal([`Mongoose connection error`, err]));
+        }).catch((err) => Logger.fatal([err, '']));
         mongoose.connection.on('connected', () => Logger.info(`√ Connected to MongoDB!`));
         mongoose.connection.on('disconnected', async () => {
-            Logger.error(`██ Disconnected from MongoDB!`);
+            Logger.warn(`██ Disconnected from MongoDB!`);
             await client.wait(5000);
-            Logger.infoh(`██ Attempting to reconnect to MongoDB...`);
+            Logger.warn(`██ Attempting to reconnect to MongoDB...`);
             connect();
         });
         connect();
@@ -25,11 +25,14 @@ module.exports = class Mongoose {
      * Initializes the Mongoose module and errors if it has already been initialized
      * Requires the Config module to be initialized first with a database config present
      * @constructor
-     * @private
+     * @param {string} uri The uri to the database (optional if Config was initialized)
      */
-    constructor() {
+    constructor(uri) {
         if (!Mongoose.called) {
             Mongoose.called = true;
+            this.#uri = uri;
+            if (!this.#uri && !Config?._env?.toolbox?.database) throw new Error('No database config present');
+            if (!this.#uri) this.#uri = Config._env.toolbox.database;
             this.#start();
         } else throw new Error('Mongoose can only be called once');
     }
