@@ -7,13 +7,11 @@ const {
     Collection,
     Routes,
 } = require('discord.js');
-const {
-    Logger,
-    Config,
-    CommandBuilder,
-    EventBuilder,
-    InteractionBuilder,
-} = require('../');
+const Logger = require('./logger');
+const Config = require('./config');
+const CommandBuilder = require('../classes/command');
+const EventBuilder = require('../classes/event');
+const InteractionBuilder = require('../classes/interaction');
 const App = Config.App;
 
 module.exports = class Handler {
