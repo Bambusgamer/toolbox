@@ -10,6 +10,7 @@ module.exports = class Config {
     #lastConfigKeys = [];
     #lastPublicKeys = [];
     #lastEnvKeys = [];
+    static #ready = false;
     static App = null;
     static config = {};
     static public = {};
@@ -21,6 +22,7 @@ module.exports = class Config {
      */
     async #loadConfiguration() {
         const Logger = require('./logger');
+        if (!this.#testConnection()) throw new Error('Config server connection failed');
         await Promise.all([
             axios.get(`${this.#CONFIGSERVER}/config/${this.#APPLICATIONID}`, {
                 headers: { token: this.#CONFIGSERVERTOKEN },
@@ -63,7 +65,7 @@ module.exports = class Config {
             });
     }
     /**
-     * Starts the config server for listening to refreshs
+     * Creates the main api route for and exposes it to attach other routes
      * @return {void} Returns nothing
      */
     #startServer() {
@@ -75,10 +77,33 @@ module.exports = class Config {
                 res.sendStatus(200);
             });
         });
-        app.listen(this.public.api[this.#NODEID], () => {
-            Logger.infog(`Node: ${this.public.api[this.#NODEID]}`);
-        });
+        app.start = () => {
+            app.listen(this.public.api[this.#NODEID], () => {
+                Logger.infog(`Node: ${app.port}`);
+            });
+        };
         Config.App = app;
+    }
+    /**
+     * Tests if a connection to the config server can be established
+     * Doesn't return a promise
+     * @return {boolean} Returns true if the connection was successful
+     */
+    #testConnection() {
+        const Logger = require('./logger');
+        return axios.get(`${this.#CONFIGSERVER}/test`, {
+            headers: { token: this.#CONFIGSERVERTOKEN },
+        }).then((res) => {
+            if (res.data == 'OK') {
+                Logger.infog('Connection to config server established');
+                return true;
+            }
+            Logger.warn('Connection to config server failed');
+            return false;
+        }).catch(() => {
+            Logger.warn('Connection to config server failed');
+            return false;
+        });
     }
     /**
      * Initializes the config server connection data
@@ -87,20 +112,23 @@ module.exports = class Config {
      * @param {string} app The application id
      * @param {string} node The node id
      */
-    constructor({ server, token, app, node }) {
+    constructor(server, token, app, node) {
         const Logger = require('./logger');
+        if (!server || !token || !app || !node) throw new Error('Invalid config server data');
         this.#CONFIGSERVER = server;
         this.#CONFIGSERVERTOKEN = token;
         this.#APPLICATIONID = app;
         this.#NODEID = node;
         this.public = {};
         this._env = {};
+        Config.#ready = this.#testConnection();
         Logger.info(`Config module initialized`);
     }
     /**
      * Starts the config server and loads the configuration to make it staticly available
      */
     async load() {
+        if (!Config.#ready) throw new Error('Config module not ready');
         await this.#loadConfiguration();
         this.#startServer();
     }
