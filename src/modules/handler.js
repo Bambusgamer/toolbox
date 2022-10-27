@@ -101,7 +101,7 @@ module.exports = class Handler {
             Logger.infoy('\nInteractions:');
             success = success && this.#loadInteractions();
         }
-        if (this.#commandsPath || this.#interactionsPath || this.#eventsPath) Logger.log('\n');
+        if (this.#commandsPath || this.#interactionsPath || this.#eventsPath) Logger.newline();
         return success;
     }
     /**
