@@ -1,6 +1,7 @@
 exports.Config = require('./modules/config');
 exports.Logger = require('./modules/logger');
 exports.Handler = require('./modules/handler');
+exports.Localizer = require('./modules/localizer');
 exports.AntiCrash = require('./modules/anticrash');
 exports.Mongoose = require('./modules/mongoose');
 exports.App = require('./modules/config').App;
