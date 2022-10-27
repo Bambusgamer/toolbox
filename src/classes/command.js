@@ -32,14 +32,14 @@ module.exports = class CommandBuilder {
      * @return {boolean}
      */
     get hasSlash() {
-        return Boolean(this.global);
+        return Boolean(this.slash);
     }
     /**
      * Checks if a beta slash command is present
      * @return {boolean}
      */
     get hasBetaSlash() {
-        return Boolean(this.beta);
+        return Boolean(this.betaSlash);
     }
     /**
      * Checks if a text command is present

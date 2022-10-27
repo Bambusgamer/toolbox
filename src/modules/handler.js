@@ -39,6 +39,7 @@ module.exports = class Handler {
     #ready() {
         if (!this.#rest) return false;
         if (!this.#client) return false;
+        return true;
     }
     /**
      * Initializes the handler module
@@ -266,11 +267,11 @@ module.exports = class Handler {
         try {
             if (!this.#ready()) return (Logger.error('Client and rest not ready') && false);
             const body = [];
-            for (const command of this.slashCommands.values()) {
-                body.push(command.data.toJSON());
-            };
+            this.slashCommands.forEach((command) => {
+                body.push(command.data);
+            });
             const data = await this.#rest.put(
-                Routes.applicationCommands(client.user.id),
+                Routes.applicationCommands(this.#client.user.id),
                 { body },
             );
             Logger.infog(`Registered ${data.length} slash commands`);
@@ -292,15 +293,17 @@ module.exports = class Handler {
             if (!this.#ready()) return (Logger.error('Client and rest not ready') && false);
             const body = [];
             if (commands === null) {
-                for (const command of this.BetaSlashCommands.values()) {
-                    commands.push(command.data.toJSON());
-                };
+                this.BetaSlashCommands.forEach((command) => {
+                    body.push(command.data);
+                });
             } else if (typeof commands === 'array') {
-                for (const command of commands) {
-                    if (this.BetaSlashCommands.has(command)) body.push(this.BetaSlashCommands.get(command).data.toJSON());
-                };
+                this.BetaSlashCommands.forEach((command) => {
+                    if (commands.includes(command.data.name)) body.push(command.data);
+                });
             } else if (typeof commands === 'string') {
-                if (this.BetaSlashCommands.has(commands)) body.push(this.BetaSlashCommands.get(commands).data.toJSON());
+                this.BetaSlashCommands.forEach((command) => {
+                    if (commands === command.data.name) body.push(command.data);
+                });
             } else {
                 Logger.warn('Invalid commands type. Viable types are: string, array<string>, null');
                 return false;
