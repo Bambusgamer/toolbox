@@ -80,31 +80,32 @@ module.exports = class CommandBuilder {
 
     /**
      * Constructs a new Command
-     * @param {object} slash The global commands data and callback
-     * @param {SlashCommandDataBuilder} global.data The global slash command data
-     * @param {function} slash.callback The global slash command callback
-     * @param {supportClasses} slash.callback.supportClasses The support classes
-     * @param {Client} slash.callback.client The client
-     * @param {CommandInteraction} slash.callback.interaction The interaction
-     * @param {object} betaSlash The beta commands data and callback
-     * @param {SlashCommandDataBuilder} betaSlash.data The beta slash command data
-     * @param {function} betaSlash.callback The beta slash command callback
-     * @param {supportClasses} betaSlash.callback.supportClasses The support classes
-     * @param {Client} betaSlash.callback.client The client
-     * @param {CommandInteraction} betaSlash.callback.interaction The interaction
-     * @param {object} text The text commands data and callback
-     * @param {CommandDataBuilder} text.data The text command data
-     * @param {function} text.callback The text command callback
-     * @param {supportClasses} text.callback.supportClasses The support classes
-     * @param {Client} text.callback.client The client
-     * @param {Message} text.callback.message The message
-     * @param {string[]} text.callback.args The arguments
+     * @param {object} commands The commands
+     * @param {object} commands.slash The global commands data and callback
+     * @param {SlashCommandDataBuilder} commands.slash.data The global slash command data
+     * @param {function} commands.slash.callback The global slash command callback
+     * @param {supportClasses} commands.slash.callback.supportClasses The support classes
+     * @param {Client} commands.slash.callback.client The client
+     * @param {CommandInteraction} commands.slash.callback.interaction The interaction
+     * @param {object} commands.betaSlash The beta commands data and callback
+     * @param {SlashCommandDataBuilder} commands.betaSlash.data The beta slash command data
+     * @param {function} commands.betaSlash.callback The beta slash command callback
+     * @param {supportClasses} commands.betaSlash.callback.supportClasses The support classes
+     * @param {Client} commands.betaSlash.callback.client The client
+     * @param {CommandInteraction} commands.betaSlash.callback.interaction The interaction
+     * @param {object} commands.text The text commands data and callback
+     * @param {CommandDataBuilder} commands.text.data The text command data
+     * @param {function} commands.text.callback The text command callback
+     * @param {supportClasses} commands.text.callback.supportClasses The support classes
+     * @param {Client} commands.text.callback.client The client
+     * @param {Message} commands.text.callback.message The message
+     * @param {string[]} commands.text.callback.args The arguments
      * @constructor
      */
-    constructor(slash, betaSlash, text) {
-        this.slash = slash || null;
-        this.betaSlash = betaSlash || null;
-        this.text = text || null;
+    constructor(commands) {
+        this.slash = commands?.slash || null;
+        this.betaSlash = commands?.betaSlash || null;
+        this.text = commands?.text || null;
     }
 
     /**
