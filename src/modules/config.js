@@ -79,7 +79,7 @@ module.exports = class Config {
         });
         app.start = () => {
             app.listen(this.public.api[this.#NODEID], () => {
-                Logger.infog(`API port: ${this.public.api[this.#NODEID]}\n`);
+                Logger.infog(`API port: ${this.public.api[this.#NODEID]}`);
             });
         };
         Config.App = app;

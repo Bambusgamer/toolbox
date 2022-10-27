@@ -174,7 +174,7 @@ module.exports = class Logger {
      * @param {boolean} write If the new lines should be written to the log file
      */
     static newline(lines, write) {
-        for (let i = 0; i < lines ?? 1; i++) {
+        for (let i = 0; i < (lines ?? 1); i++) {
             this.console('', 'NEWLINE');
             if (write) this.write('', 'NEWLINE');
         }

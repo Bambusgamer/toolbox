@@ -75,7 +75,7 @@ module.exports = class Handler {
             this.#rest = new REST({ version: '9' }).setToken(restToken);
             // check if the token is valid by requesting the client user
             this.#rest.get(Routes.user('@me')).then(() => {
-                Logger.infoy('\nREST client initialized');
+                Logger.info('REST client initialized');
             }).catch((err) => {
                 Logger.fatal([err, 'REST client failed initialization']);
                 this.#rest = null;
