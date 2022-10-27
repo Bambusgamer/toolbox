@@ -63,6 +63,9 @@ module.exports = class Logger {
             case 'FATAL':
                 console.log(colors.red(`[${timestamp().text}] |`), data[0], data[1] || '');
                 break;
+            case 'NEWLINE':
+                console.log('\n');
+                break;
             default:
                 console.log(colors.white(`[${timestamp().text}] | ${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
                 break;
@@ -164,6 +167,17 @@ module.exports = class Logger {
         this.console(data, 'FATAL');
         this.write(data, 'FATAL');
         this.send(data, 'FATAL');
+    }
+    /**
+     * Logs out a new line or multiple new lines
+     * @param {number} lines Number of new lines to log out
+     * @param {boolean} write If the new lines should be written to the log file
+     */
+    static newline(lines, write) {
+        for (let i = 0; i < lines ?? 1; i++) {
+            this.console('', 'NEWLINE');
+            if (write) this.write('', 'NEWLINE');
+        }
     }
     /**
      * Initializes the logger
