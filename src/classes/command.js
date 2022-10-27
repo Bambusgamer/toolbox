@@ -15,7 +15,7 @@ const {
     TextInput,
     Modal,
 } = require('../util/builders');
-const supportClasses = {
+const modules = {
     Logger,
     Config,
     Embed,
@@ -26,7 +26,7 @@ const supportClasses = {
 };
 
 module.exports = class CommandBuilder {
-    static supportClasses = supportClasses;
+    static modules = modules;
     /**
      * Checks if a slash command is present
      * @return {boolean}
@@ -117,16 +117,16 @@ module.exports = class CommandBuilder {
         if (!client) throw new Error('Client is required to hydrate command');
         if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
         if (this.hasSlash) {
-            this.slash.data = this.slash.data(new SlashCommandBuilder(), client, CommandBuilder.supportClasses);
-            this.slash.callback = this.slash.callback.bind(null, CommandBuilder.supportClasses);
+            this.slash.data = this.slash.data(new SlashCommandBuilder(), client, CommandBuilder.modules);
+            this.slash.callback = this.slash.callback.bind(null, CommandBuilder.modules);
         }
         if (this.hasBetaSlash) {
-            this.betaSlash.data = this.betaSlash.data(new SlashCommandBuilder(), client, CommandBuilder.supportClasses);
-            this.betaSlash.callback = this.betaSlash.callback.bind(null, CommandBuilder.supportClasses);
+            this.betaSlash.data = this.betaSlash.data(new SlashCommandBuilder(), client, CommandBuilder.modules);
+            this.betaSlash.callback = this.betaSlash.callback.bind(null, CommandBuilder.modules);
         }
         if (this.hasText) {
-            this.text.data = this.text.data(client, CommandBuilder.supportClasses);
-            this.text.callback = this.text.callback.bind(null, CommandBuilder.supportClasses);
+            this.text.data = this.text.data(client, CommandBuilder.modules);
+            this.text.callback = this.text.callback.bind(null, CommandBuilder.modules);
         }
     }
 

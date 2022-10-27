@@ -1,7 +1,26 @@
 // eslint-disable-next-line no-unused-vars
-const { Client, Integration } = require('discord.js');
+const { Client, Interaction } = require('discord.js');
+const Logger = require('../modules/logger');
+const Config = require('../modules/config');
+const {
+    Embed,
+    Button,
+    SelectMenu,
+    TextInput,
+    Modal,
+} = require('../util/builders');
+const modules = {
+    Logger,
+    Config,
+    Embed,
+    Button,
+    SelectMenu,
+    TextInput,
+    Modal,
+};
 
-module.exports = class Interaction {
+module.exports = class InteractionBuilder {
+    static modules = modules;
     /**
      * Creates a new Interaction
      * @param {string} customId The customId of the interaction
@@ -11,7 +30,7 @@ module.exports = class Interaction {
      */
     constructor(customId, callback) {
         this.customId = customId;
-        this.callback = callback;
+        this.callback = callback.bind(null, InteractionBuilder.modules);
     }
     /**
      * Returns the name associated with the interaction
