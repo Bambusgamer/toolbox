@@ -64,7 +64,7 @@ module.exports = class Logger {
                 console.log(colors.red(`[${timestamp().text}] |`), data[0], data[1] || '');
                 break;
             case 'NEWLINE':
-                console.log('\n');
+                console.log('');
                 break;
             default:
                 console.log(colors.white(`[${timestamp().text}] | ${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
