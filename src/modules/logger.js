@@ -33,9 +33,8 @@ module.exports = class Logger {
         const stack = new Error().stack;
         const frame = stack.split('\n')[3].trim();
         // Credits to discord@A7mooz#2962 for the regex
-        const regex = /(?:[A-Z]:)?(?:(\/|\\)(\w\.?)+)+\1?/g;
-        const match = regex.exec(frame)[0].replace(/\\/g, '/');
-        const path = match.split('/').slice(0, -1).join('/');
+        const regex = /([A-Z]:)?((\/|\\)(\w\.?)+)+\3/g;
+        const path = regex.exec(frame)[0].replace(/\\/g, '/');
         return path;
     }
     /**

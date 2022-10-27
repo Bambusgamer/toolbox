@@ -29,9 +29,8 @@ module.exports = class Handler {
         const stack = new Error().stack;
         const frame = stack.split('\n')[3].trim();
         // Credits to discord@A7mooz#2962 for the regex
-        const regex = /(?:[A-Z]:)?(?:(\/|\\)(\w\.?)+)+\1?/g;
-        const match = regex.exec(frame)[0].replace(/\\/g, '/');
-        const path = match.split('/').slice(0, -1).join('/');
+        const regex = /([A-Z]:)?((\/|\\)(\w\.?)+)+\3/g;
+        const path = regex.exec(frame)[0].replace(/\\/g, '/');
         return path;
     }
     /**
@@ -65,6 +64,7 @@ module.exports = class Handler {
         this.events = new Collection();
         if (App) {
             App.post('/Handler/reload', (req, res) => {
+                Logger.info(`Reloading handler from ${req.ip}`);
                 this.clear();
                 const success = this.load();
                 res.sendStatus(success ? 200 : 500);
@@ -89,12 +89,18 @@ module.exports = class Handler {
      */
     async load() {
         let success = false;
-        Logger.infoy('\nCommands:');
-        if (this.#commandsPath) success = this.#loadCommands();
-        Logger.infoy('\nEvents:');
-        if (this.#eventsPath) success = success && this.#loadEvents();
-        Logger.infoy('\nInteractions:');
-        if (this.#interactionsPath) success = success && this.#loadInteractions();
+        if (this.#commandsPath) {
+            Logger.infoy('\nCommands:');
+            success = this.#loadCommands();
+        }
+        if (this.#eventsPath) {
+            Logger.infoy('\nEvents:');
+            success = success && this.#loadEvents();
+        }
+        if (this.#interactionsPath) {
+            Logger.infoy('\nInteractions:');
+            success = success && this.#loadInteractions();
+        }
         return success;
     }
     /**

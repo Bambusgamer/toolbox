@@ -115,6 +115,7 @@ module.exports = class CommandBuilder {
      */
     hydrate(client) {
         if (!client) throw new Error('Client is required to hydrate command');
+        if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
         if (this.hasSlash) {
             this.slash.data = this.slash.data(new SlashCommandBuilder(), client, CommandBuilder.supportClasses);
             this.slash.callback = this.slash.callback.bind(null, CommandBuilder.supportClasses);
