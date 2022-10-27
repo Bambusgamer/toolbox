@@ -12,11 +12,11 @@ module.exports = class Mongoose {
         const connect = () => mongoose.connect(this.#uri, {
             useUnifiedTopology: true,
         }).catch((err) => Logger.fatal([err, '']));
-        mongoose.connection.on('connected', () => Logger.info(`√ Connected to MongoDB!`));
+        mongoose.connection.on('connected', () => Logger.info(`\n√ Connected to MongoDB!\n`));
         mongoose.connection.on('disconnected', async () => {
-            Logger.warn(`██ Disconnected from MongoDB!`);
+            Logger.warn(`\n██ Disconnected from MongoDB!\n`);
             await client.wait(5000);
-            Logger.warn(`██ Attempting to reconnect to MongoDB...`);
+            Logger.warn(`\n██ Attempting to reconnect to MongoDB...\n`);
             connect();
         });
         connect();

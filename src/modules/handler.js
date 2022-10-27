@@ -74,11 +74,11 @@ module.exports = class Handler {
         if (restToken) {
             this.#rest = new REST({ version: '9' }).setToken(restToken);
             // check if the token is valid by requesting the client user
-            this.#rest.get(Routes.user('@me')).then((data) => {
-                Logger.infoy('Rest client initialized');
+            this.#rest.get(Routes.user('@me')).then(() => {
+                Logger.infoy('\nREST client initialized');
             }).catch((err) => {
-                Logger.fatal([err, 'Rest client failed initialization']);
-                this.#rest = 'invalid';
+                Logger.fatal([err, 'REST client failed initialization']);
+                this.#rest = null;
             });
         } else Logger.warn('Handler REST client disabled');
         Logger.info('Handler module initialized');
@@ -101,6 +101,7 @@ module.exports = class Handler {
             Logger.infoy('\nInteractions:');
             success = success && this.#loadInteractions();
         }
+        if (this.#commandsPath || this.#interactionsPath || this.#eventsPath) Logger.log('\n');
         return success;
     }
     /**
@@ -157,10 +158,12 @@ module.exports = class Handler {
                 const folderPath = _path.join(this.#eventsPath, folder.name);
                 const folderElements = fs.readdirSync(folderPath, { withFileTypes: true });
                 const folderFiles = folderElements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
+                if (folderFiles.length > 0) Logger.infoy(`\n${folder.name} events`);
                 for (const file of folderFiles) {
                     loadFile(_path.join(folder.name, file.name));
                 };
             };
+            if (files.length > 0) Logger.infogy('\nroot events');
             for (const file of files) {
                 loadFile(file);
             };
@@ -253,7 +256,7 @@ module.exports = class Handler {
                 loadFile(file.name);
             }
         } catch (err) {
-            Logger.fatal([err]);
+            Logger.error(err);
             success = false;
         }
         return success;
