@@ -1,6 +1,6 @@
-const { Logger } = require('..');
 const statics = require('../util/statics');
 const Config = require('./config');
+const Logger = require('./logger');
 
 module.exports = class Localizer {
     static #instancePath = null;
