@@ -12,7 +12,6 @@ const Config = require('./config');
 const CommandBuilder = require('../classes/command');
 const EventBuilder = require('../classes/event');
 const InteractionBuilder = require('../classes/interaction');
-const App = Config.App;
 
 module.exports = class Handler {
     // Private fields
@@ -62,8 +61,8 @@ module.exports = class Handler {
         this.textCommands = new Collection();
         this.interactions = new Collection();
         this.events = new Collection();
-        if (App) {
-            App.post('/Handler/reload', (req, res) => {
+        if (Config.App) {
+            Config.App.post('/Handler/reload', (req, res) => {
                 Logger.info(`Reloading handler from ${req.ip}`);
                 this.clear();
                 const success = this.load();
@@ -141,7 +140,7 @@ module.exports = class Handler {
                 if (file.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const event = require(_path.join(this.#eventsPath, file));
                 if (!(event instanceof EventBuilder)) return;
-                if (client._events[event.name]) {
+                if (client._events[event.name] !== undefined) {
                     if (typeof (client._events[event.name]) != 'function') {
                         client.removeListener(event.name, client._events[event.name][client._events[event.name].length - 1]);
                     } else client.removeListener(event.name, client._events[event.name]);

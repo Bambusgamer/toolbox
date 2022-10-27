@@ -79,7 +79,7 @@ module.exports = class Config {
         });
         app.start = () => {
             app.listen(this.public.api[this.#NODEID], () => {
-                Logger.infog(`Node: ${app.port}`);
+                Logger.infog(`Node: ${this.public.api[this.#NODEID]}`);
             });
         };
         Config.App = app;
@@ -95,7 +95,6 @@ module.exports = class Config {
             headers: { token: this.#CONFIGSERVERTOKEN },
         }).then((res) => {
             if (res.data == 'OK') {
-                Logger.infog('Connection to config server established');
                 return true;
             }
             Logger.warn('Connection to config server failed');
