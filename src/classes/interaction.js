@@ -19,16 +19,20 @@ const modules = {
     Modal,
 };
 
-module.exports = class InteractionBuilder {
+/**
+ * The base class for all interactions
+ */
+class InteractionBuilder {
     static modules = modules;
     /**
      * Creates a new Interaction
-     * @param {string} customId The customId of the interaction
-     * @param {function} callback The interaction data
-     * @param {Client} callback.client The client
-     * @param {Interaction} callback.interaction The interaction
+     * @param {object} obj The interaction
+     * @param {string} obj.customId The customId of the interaction
+     * @param {function} obj.callback The interaction data
+     * @param {Client} obj.callback.client The client
+     * @param {Interaction} obj.callback.interaction The interaction
      */
-    constructor(customId, callback) {
+    constructor({ customId, callback }) {
         this.customId = customId;
         this.callback = callback.bind(null, InteractionBuilder.modules);
     }
@@ -40,3 +44,5 @@ module.exports = class InteractionBuilder {
         return this.customId;
     }
 };
+
+module.exports = InteractionBuilder;

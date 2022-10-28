@@ -23,9 +23,16 @@ const modules = {
     SelectMenu,
     TextInput,
     Modal,
+    perms: PermissionFlagsBits,
 };
 
-module.exports = class CommandBuilder {
+
+/**
+ * The base class for all commands
+ * @abstract
+ * @class
+ */
+class CommandBuilder {
     static modules = modules;
     /**
      * Checks if a slash command is present
@@ -50,62 +57,22 @@ module.exports = class CommandBuilder {
     }
 
     /**
-     * @typedef {function} SlashCommandDataBuilder
-     * @param {SlashCommandBuilder} builder The slash command builder
-     * @param {Client} client The client
-     * @param {object} supportClasses The support classes
-     * @return {SlashCommandBuilder} Hydrated slash command builder
+     * Creates a new Command and hydrates the command data
+     * @param {object} obj The object to check
+     * @param {object} obj.slash The slash command data
+     * @param {object} obj.betaSlash The beta slash command data
+     * @param {object} obj.text The text command data
+     * @param {function} obj.slash.data The slash command builder
+     * @param {function} obj.slash.callback The slash command callback
+     * @param {function} obj.betaSlash.data The beta slash command builder
+     * @param {function} obj.betaSlash.callback The beta slash command callback
+     * @param {function} obj.text.data The text command builder
+     * @param {function} obj.text.callback The text command callback
      */
-
-    /**
-     * @typedef {object} CommandData
-     * @property {string} name The name of the command
-     * @property {Array<string>} aliases The aliases of the command
-     * @property {string} category The category of the command
-     * @property {Array<PermissionFlagsBits>} permissions The permissions required of the user (null if authorized only)
-     * @property {string} description The description of the command
-     * @property {string} usage The usage of the command
-     * @property {string} example The example of the command
-     * @property {boolean} guildOnly Whether the command can only be used in a guild
-     * @property {boolean} dmOnly Whether the command can only be used in a DM
-     */
-
-    /**
-     * @typedef {function} CommandDataBuilder
-     * @param {Client} client The client
-     * @param {object} supportClasses The support classes
-     * @return {CommandData} The command data
-     */
-
-
-    /**
-     * Constructs a new Command
-     * @param {object} commands The commands
-     * @param {object} commands.slash The global commands data and callback
-     * @param {SlashCommandDataBuilder} commands.slash.data The global slash command data
-     * @param {function} commands.slash.callback The global slash command callback
-     * @param {supportClasses} commands.slash.callback.supportClasses The support classes
-     * @param {Client} commands.slash.callback.client The client
-     * @param {CommandInteraction} commands.slash.callback.interaction The interaction
-     * @param {object} commands.betaSlash The beta commands data and callback
-     * @param {SlashCommandDataBuilder} commands.betaSlash.data The beta slash command data
-     * @param {function} commands.betaSlash.callback The beta slash command callback
-     * @param {supportClasses} commands.betaSlash.callback.supportClasses The support classes
-     * @param {Client} commands.betaSlash.callback.client The client
-     * @param {CommandInteraction} commands.betaSlash.callback.interaction The interaction
-     * @param {object} commands.text The text commands data and callback
-     * @param {CommandDataBuilder} commands.text.data The text command data
-     * @param {function} commands.text.callback The text command callback
-     * @param {supportClasses} commands.text.callback.supportClasses The support classes
-     * @param {Client} commands.text.callback.client The client
-     * @param {Message} commands.text.callback.message The message
-     * @param {string[]} commands.text.callback.args The arguments
-     * @constructor
-     */
-    constructor(commands) {
-        this.slash = commands?.slash || null;
-        this.betaSlash = commands?.betaSlash || null;
-        this.text = commands?.text || null;
+    constructor({ slash, betaSlash, text }) {
+        this.slash = slash || null;
+        this.betaSlash = betaSlash || null;
+        this.text = text || null;
     }
 
     /**
@@ -163,3 +130,5 @@ module.exports = class CommandBuilder {
         return this.text?.data?.aliases || null;
     }
 };
+
+module.exports = CommandBuilder;

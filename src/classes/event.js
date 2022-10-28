@@ -19,19 +19,25 @@ const modules = {
     Modal,
 };
 
-module.exports = class EventBuilder {
+/**
+ * The base class for all events
+ */
+class EventBuilder {
     static modules = modules;
     /**
      * Creates a new Event
-     * @param {string} name The name of the event the {Client} emits
-     * @param {Boolean} once Whether the event should only be emitted once
-     * @param {function} callback The event data
-     * @param {Client} callback.client The client
+     * @param {object} obj The event
+     * @param {string} obj.name The name of the event the {Client} emits
+     * @param {Boolean} obj.once Whether the event should only be emitted once
+     * @param {function} obj.callback The event data
+     * @param {object} obj.callback.modules The modules
+     * @param {Client} obj.callback.client The client
      */
-    constructor(name, once, callback) {
+    constructor({ name, once = false, callback }) {
         this.name = name;
         this.once = once;
         this.callback = callback.bind(null, EventBuilder.modules);
     }
 };
 
+module.exports = EventBuilder;
