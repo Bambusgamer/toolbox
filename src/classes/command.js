@@ -63,8 +63,10 @@ class CommandBuilder {
      * @param {object} obj.betaSlash The beta slash command data
      * @param {object} obj.text The text command data
      * @param {function} obj.slash.data The slash command builder
+     * @param {function} obj.slash.autocomplete The slash command autocomplete callback
      * @param {function} obj.slash.callback The slash command callback
      * @param {function} obj.betaSlash.data The beta slash command builder
+     * @param {function} obj.betaSlash.autocomplete The beta slash command autocomplete callback
      * @param {function} obj.betaSlash.callback The beta slash command callback
      * @param {function} obj.text.data The text command builder
      * @param {function} obj.text.callback The text command callback
@@ -73,12 +75,14 @@ class CommandBuilder {
         if (slash && typeof slash !== 'object') throw new Error('Invalid slash command data');
         if (betaSlash && typeof betaSlash !== 'object') throw new Error('Invalid beta slash command data');
         if (text && typeof text !== 'object') throw new Error('Invalid text command data');
-        if (slash && !slash.data && typeof slash.data !== 'function') throw new Error('Slash command data must have a data function');
-        if (slash && !slash.callback && typeof slash.callback !== 'function') throw new Error('Slash command data must have a callback function');
-        if (betaSlash && !betaSlash.data && typeof betaSlash.data !== 'function') throw new Error('Beta slash command data must have a data function');
-        if (betaSlash && !betaSlash.callback && typeof betaSlash.callback !== 'function') throw new Error('Beta slash command data must have a callback function');
-        if (text && !text.data && typeof text.data !== 'function') throw new Error('Text command data must have a data function');
-        if (text && !text.callback && typeof text.callback !== 'function') throw new Error('Text command data must have a callback function');
+        if (slash && !slash.data || typeof slash.data !== 'function') throw new Error('Slash command data must have a data function');
+        if (slash && slash?.autocomplete && typeof slash.autocomplete !== 'function') throw new Error('Slash command autocomplete must be of type function');
+        if (slash && slash.callback || typeof slash.callback !== 'function') throw new Error('Slash command data must have a callback function');
+        if (betaSlash && !betaSlash.data || typeof betaSlash.data !== 'function') throw new Error('Beta slash command data must have a data function');
+        if (betaSlash && betaSlash?.autocomplete && typeof betaSlash.autocomplete !== 'function') throw new Error('Beta slash command autocomplete must be of type function');
+        if (betaSlash && !betaSlash.callback || typeof betaSlash.callback !== 'function') throw new Error('Beta slash command data must have a callback function');
+        if (text && !text.data || typeof text.data !== 'function') throw new Error('Text command data must have a data function');
+        if (text && !text.callback || typeof text.callback !== 'function') throw new Error('Text command data must have a callback function');
         this.slash = slash || null;
         this.betaSlash = betaSlash || null;
         this.text = text || null;
@@ -95,10 +99,12 @@ class CommandBuilder {
         if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
         if (this.hasSlash) {
             this.slash.data = this.slash.data(new SlashCommandBuilder(), client, CommandBuilder.modules);
+            if (this.slash.autocomplete) this.slash.autocomplete = this.slash.autocomplete.bind(null, CommandBuilder.modules);
             this.slash.callback = this.slash.callback.bind(null, CommandBuilder.modules);
         }
         if (this.hasBetaSlash) {
             this.betaSlash.data = this.betaSlash.data(new SlashCommandBuilder(), client, CommandBuilder.modules);
+            if (this.betaSlash.autocomplete) this.betaSlash.autocomplete = this.betaSlash.autocomplete.bind(null, CommandBuilder.modules);
             this.betaSlash.callback = this.betaSlash.callback.bind(null, CommandBuilder.modules);
         }
         if (this.hasText) {
