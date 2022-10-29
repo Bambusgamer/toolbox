@@ -77,7 +77,7 @@ class CommandBuilder {
         if (text && typeof text !== 'object') throw new Error('Invalid text command data');
         if (slash && !slash.data || typeof slash.data !== 'function') throw new Error('Slash command data must have a data function');
         if (slash && slash?.autocomplete && typeof slash.autocomplete !== 'function') throw new Error('Slash command autocomplete must be of type function');
-        if (slash && slash.callback || typeof slash.callback !== 'function') throw new Error('Slash command data must have a callback function');
+        if (slash && !slash.callback || typeof slash.callback !== 'function') throw new Error('Slash command data must have a callback function');
         if (betaSlash && !betaSlash.data || typeof betaSlash.data !== 'function') throw new Error('Beta slash command data must have a data function');
         if (betaSlash && betaSlash?.autocomplete && typeof betaSlash.autocomplete !== 'function') throw new Error('Beta slash command autocomplete must be of type function');
         if (betaSlash && !betaSlash.callback || typeof betaSlash.callback !== 'function') throw new Error('Beta slash command data must have a callback function');
