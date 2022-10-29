@@ -70,6 +70,15 @@ class CommandBuilder {
      * @param {function} obj.text.callback The text command callback
      */
     constructor({ slash, betaSlash, text }) {
+        if (slash && typeof slash !== 'object') throw new Error('Invalid slash command data');
+        if (betaSlash && typeof betaSlash !== 'object') throw new Error('Invalid beta slash command data');
+        if (text && typeof text !== 'object') throw new Error('Invalid text command data');
+        if (slash && !slash.data && typeof slash.data !== 'function') throw new Error('Slash command data must have a data function');
+        if (slash && !slash.callback && typeof slash.callback !== 'function') throw new Error('Slash command data must have a callback function');
+        if (betaSlash && !betaSlash.data && typeof betaSlash.data !== 'function') throw new Error('Beta slash command data must have a data function');
+        if (betaSlash && !betaSlash.callback && typeof betaSlash.callback !== 'function') throw new Error('Beta slash command data must have a callback function');
+        if (text && !text.data && typeof text.data !== 'function') throw new Error('Text command data must have a data function');
+        if (text && !text.callback && typeof text.callback !== 'function') throw new Error('Text command data must have a callback function');
         this.slash = slash || null;
         this.betaSlash = betaSlash || null;
         this.text = text || null;

@@ -34,6 +34,8 @@ class EventBuilder {
      * @param {Client} obj.callback.client The client
      */
     constructor({ name, once = false, callback }) {
+        if (!name || typeof name !== 'string') throw new Error('Invalid event name');
+        if (!callback || typeof callback !== 'function') throw new Error('Invalid event callback');
         this.name = name;
         this.once = once;
         this.callback = callback.bind(null, EventBuilder.modules);

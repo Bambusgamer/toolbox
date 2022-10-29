@@ -33,6 +33,8 @@ class InteractionBuilder {
      * @param {Interaction} obj.callback.interaction The interaction
      */
     constructor({ customId, callback }) {
+        if (!customId || typeof customId !== 'string') throw new Error('Invalid interaction customId');
+        if (!callback || typeof callback !== 'function') throw new Error('Invalid interaction callback');
         this.customId = customId;
         this.callback = callback.bind(null, InteractionBuilder.modules);
     }
