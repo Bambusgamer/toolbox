@@ -62,7 +62,6 @@ module.exports = class Handler {
         this.BetaSlashCommands = new Collection();
         this.textCommands = new Collection();
         this.interactions = new Collection();
-        this.events = new Collection();
         if (Config.App) {
             Config.App.post('/Handler/reload', (req, res) => {
                 Logger.info(`Reloading handler from ${req.ip}`);
