@@ -93,11 +93,13 @@ module.exports = class Handler {
     #listenEvents() {
         for (const event of statics.events) {
             this.#client.on(event, (...args) => {
-                const listeners = this.events.get(event);
-                for (const listener of listeners) {
-                    listener(...args);
+                if (this.events.has(event)) {
+                    const listeners = this.events.get(event);
+                    for (const listener of listeners) {
+                        listener.callback(...args);
+                    }
+                    this.events.set(event, listeners.filter((listener) => listener.once === false));
                 }
-                this.events.set(event, listeners.filter((listener) => listener.once === false));
             });
         }
     }
@@ -160,6 +162,7 @@ module.exports = class Handler {
                 if (file.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const event = require(_path.join(this.#eventsPath, file));
                 if (!(event instanceof EventBuilder)) return;
+                event.callback = event.callback.bind(null, client);
                 let listeners = this.events.get(event.name);
                 if (!listeners) {
                     listeners = new Array(event);
