@@ -9,6 +9,7 @@ const {
 } = require('discord.js');
 const Logger = require('./logger');
 const Config = require('./config');
+const statics = require('../util/statics');
 const CommandBuilder = require('../classes/command');
 const EventBuilder = require('../classes/event');
 const InteractionBuilder = require('../classes/interaction');
@@ -81,7 +82,24 @@ module.exports = class Handler {
                 this.#rest = null;
             });
         } else Logger.warn('Handler REST client disabled');
+        this.#listenEvents();
         Logger.info('Handler module initialized');
+    }
+    /**
+     * Listens to all events and dynamically passes them to registered events
+     * @return {void}
+     * @private
+     */
+    #listenEvents() {
+        for (const event of statics.events) {
+            this.#client.on(event, (...args) => {
+                const listeners = this.events.get(event);
+                for (const listener of listeners) {
+                    listener(...args);
+                }
+                this.events.set(event, listeners.filter((listener) => listener.once === false));
+            });
+        }
     }
     /**
      * Loads all the events, commands and interactions
@@ -142,16 +160,11 @@ module.exports = class Handler {
                 if (file.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const event = require(_path.join(this.#eventsPath, file));
                 if (!(event instanceof EventBuilder)) return;
-                if (client._events[event.name] !== undefined) {
-                    if (typeof (client._events[event.name]) != 'function') {
-                        client.removeListener(event.name, client._events[event.name][client._events[event.name].length - 1]);
-                    } else client.removeListener(event.name, client._events[event.name]);
-                };
-                if (event.once) {
-                    client.once(event.name, event.callback.bind(null, client));
-                } else {
-                    client.on(event.name, event.callback.bind(null, client));
-                }
+                let listeners = this.events.get(event.name);
+                if (!listeners) {
+                    listeners = new Array(event);
+                } else listeners.push(event);
+                this.events.set(event.name, listeners);
                 Logger.infog(`${event.name} loaded`);
             };
             for (const folder of folders) {
