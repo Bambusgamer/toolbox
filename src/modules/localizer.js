@@ -3,7 +3,6 @@ const Config = require('./config');
 const Logger = require('./logger');
 
 module.exports = class Localizer {
-    static #instancePath = null;
     static #path = null;
     static #languagePack = null;
     /**
@@ -20,12 +19,12 @@ module.exports = class Localizer {
     }
     /**
      * Creates a new Localizer
-     * @param {string} config The path of the config relative to from where the constructor is called
+     * @param {string} path The path of the config relative to from where the constructor is called
      */
-    constructor(config) {
-        if (!config || typeof config !== 'string') throw new Error('Invalid config path');
-        this.#instancePath = this.#getInstPath();
-        this.#path = path.join(this.#instancePath, config);
+    constructor(path) {
+        if (!path || typeof path !== 'string') throw new Error('Invalid config path');
+        const instance = this.#getInstPath();
+        this.#path = path.join(instance, path);
         if (Config.App) {
             Config.App.post('/Localizer/reload', (req, res) => {
                 try {

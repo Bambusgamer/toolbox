@@ -8,6 +8,7 @@ const {
 } = require('discord.js');
 const Logger = require('../modules/logger');
 const Config = require('../modules/config');
+const Localizer = require('../modules/localizer');
 const {
     Embed,
     Button,
@@ -17,6 +18,7 @@ const {
 } = require('../util/builders');
 const modules = {
     Logger,
+    Localizer,
     Config,
     Embed,
     Button,

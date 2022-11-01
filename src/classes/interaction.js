@@ -2,6 +2,7 @@
 const { Client, Interaction } = require('discord.js');
 const Logger = require('../modules/logger');
 const Config = require('../modules/config');
+const Localizer = require('../modules/localizer');
 const {
     Embed,
     Button,
@@ -12,6 +13,7 @@ const {
 const modules = {
     Logger,
     Config,
+    Localizer,
     Embed,
     Button,
     SelectMenu,
