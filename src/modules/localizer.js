@@ -1,3 +1,4 @@
+const pathJS = require('path');
 const statics = require('../util/statics');
 const Config = require('./config');
 const Logger = require('./logger');
@@ -24,7 +25,7 @@ module.exports = class Localizer {
     constructor(path) {
         if (!path || typeof path !== 'string') throw new Error('Invalid config path');
         const instance = this.#getInstPath();
-        this.#path = path.join(instance, path);
+        this.#path = pathJS.join(instance, path);
         if (Config.App) {
             Config.App.post('/Localizer/reload', (req, res) => {
                 try {
