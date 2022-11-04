@@ -5,7 +5,11 @@ const Logger = require('./logger');
 
 module.exports = class Localizer {
     static path = null;
-    static languagePack = null;
+    static languagePack = {
+        defaultLanguage: null,
+        languages: {},
+        strings: {},
+    };
     /**
      * Returns the path from where the Handler was called
      * @return {string} path of the instance
@@ -25,12 +29,12 @@ module.exports = class Localizer {
     constructor(path) {
         if (!path || typeof path !== 'string') throw new Error('Invalid config path');
         const instance = this.#getInstPath();
-        this.path = pathJS.join(instance, path);
+        Localizer.path = pathJS.join(instance, path);
         if (Config.App) {
             Config.App.post('/Localizer/reload', (req, res) => {
                 try {
-                    delete require.cache[require.resolve(this.path)];
-                    const pack = require(this.path);
+                    delete require.cache[require.resolve(Localizer.path)];
+                    const pack = require(Localizer.path);
                     if (!this.#setLanguagePack(pack)) {
                         return res.sendStatus(500);
                     } else {
@@ -44,7 +48,7 @@ module.exports = class Localizer {
         }
         let pack = null;
         try {
-            pack = require(this.path);
+            pack = require(Localizer.path);
         } catch (e) {
             throw new Error('Invalid config path');
         }
@@ -72,11 +76,11 @@ module.exports = class Localizer {
             };
         };
         for (const language of statics.supportedDiscordLanguages) {
-            if (!pack.languages.includes(language)) this.languagePack.languages[language] = pack.defaultLanguage;
-            else this.languagePack.languages[language] = language;
+            if (!pack.languages.includes(language)) Localizer.languagePack.languages[language] = pack.defaultLanguage;
+            else Localizer.languagePack.languages[language] = language;
         };
-        this.languagePack.defaultLanguage = pack.defaultLanguage;
-        this.languagePack.strings = pack.strings;
+        Localizer.languagePack.defaultLanguage = pack.defaultLanguage;
+        Localizer.languagePack.strings = pack.strings;
         return true;
     }
     /**
@@ -86,16 +90,26 @@ module.exports = class Localizer {
      * @param {...*} placeholders The placeholders
      * @return {string} The string
      */
-    get(language, key, ...placeholders) {
+    static get(language, key, ...placeholders) {
         if (!language || typeof language !== 'string') throw new Error(`Invalid language ${language}`);
         if (!key || typeof key !== 'string') throw new Error(`Invalid key ${key}`);
-        if (!this.languagePack.languages[language]) throw new Error(`Language ${language} is not supported`);
-        if (!this.languagePack.strings[this.languagePack.languages[language]][key]) throw new Error(`Key ${key} does not exist in language ${this.languagePack.languages[language]}`);
-        let string = this.languagePack.strings[this.languagePack.languages[language]][key];
+        if (!Localizer.languagePack.languages[language]) throw new Error(`Language ${language} is not supported`);
+        if (!Localizer.languagePack.strings[Localizer.languagePack.languages[language]][key]) throw new Error(`Key ${key} does not exist in language ${Localizer.languagePack.languages[language]}`);
+        let string = Localizer.languagePack.strings[Localizer.languagePack.languages[language]][key];
         for (let i = 0; i < placeholders.length; i++) {
-            string = string.replace(`{{${i}}}`, placeholders[i]);
+            string = string.replace(`{{${i + 1}}}`, placeholders[i]);
         };
         return string;
+    }
+    /**
+     * Returns a string from the language pack in its default language and replaces the placeholders
+     * @param {string} key The key of the string
+     * @param {...*} placeholders The placeholders
+     * @return {string} The string
+     */
+    static getDefault(key, ...placeholders) {
+        if (Localizer.languagePack.defaultLanguage) return Localizer.get(Localizer.languagePack.defaultLanguage, key, ...placeholders);
+        else return Localizer.get('en-US', key, ...placeholders);
     }
     /**
      * Returns all possible strings and replaces the placeholders
@@ -103,10 +117,11 @@ module.exports = class Localizer {
      * @param {...*} placeholders The placeholders
      * @return {object} The strings
      */
-    getAll(key, ...placeholders) {
+    static getAll(key, ...placeholders) {
         if (!key || typeof key !== 'string') throw new Error(`Invalid key ${key}`);
         const strings = {};
-        for (const [peerLanguage, language] of Object.entries(this.languagePack.languages)) {
+        for (const [peerLanguage, language] of Object.entries(Localizer.languagePack.languages)) {
+            if (peerLanguage !== language) continue;
             strings[peerLanguage] = this.get(language, key, ...placeholders);
         }
         return strings;
