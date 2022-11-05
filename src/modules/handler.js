@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
 /* eslint-disable no-unused-vars */
+const EventEmitter = require('events');
 const fs = require('fs');
 const _path = require('path');
 const { REST } = require('@discordjs/rest');
@@ -14,7 +15,7 @@ const CommandBuilder = require('../classes/command');
 const EventBuilder = require('../classes/event');
 const InteractionBuilder = require('../classes/interaction');
 
-module.exports = class Handler {
+module.exports = class Handler extends EventEmitter {
     // Private fields
     #rest = null;
     #client = null;
@@ -52,6 +53,7 @@ module.exports = class Handler {
      * @param {string} restToken The token to use for the rest client
      */
     constructor(client, paths, restToken) {
+        super();
         const { events, commands, interactions } = paths;
         this.#client = client;
         if (events) this.#eventsPath = _path.join(this.#getInstPath(), events);
@@ -92,6 +94,7 @@ module.exports = class Handler {
     #listenEvents() {
         for (const event of statics.events) {
             this.#client.on(event, (...args) => {
+                this.emit(event, ...args);
                 if (this.events.has(event)) {
                     const listeners = this.events.get(event);
                     for (const listener of listeners) {
