@@ -94,7 +94,7 @@ module.exports = class Handler extends EventEmitter {
     #listenEvents() {
         for (const event of statics.events) {
             this.#client.on(event, (...args) => {
-                this.emit(event, ...args);
+                this.emit('event', event, ...args);
                 if (this.events.has(event)) {
                     const listeners = this.events.get(event);
                     for (const listener of listeners) {
