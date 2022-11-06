@@ -183,7 +183,7 @@ module.exports = class Handler extends EventEmitter {
             };
             if (files.length > 0) Logger.infogy('\nroot events');
             for (const file of files) {
-                loadFile(file);
+                loadFile(file.name);
             };
         } catch (err) {
             Logger.error(err);
