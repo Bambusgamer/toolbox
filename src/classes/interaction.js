@@ -4,6 +4,7 @@ const Logger = require('../modules/logger');
 const Config = require('../modules/config');
 const Localizer = require('../modules/localizer');
 const {
+    ActionRow,
     Embed,
     Button,
     SelectMenu,
@@ -14,6 +15,7 @@ const modules = {
     Logger,
     Config,
     Localizer,
+    ActionRow,
     Embed,
     Button,
     SelectMenu,
