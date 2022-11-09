@@ -109,13 +109,17 @@ module.exports = class Handler extends EventEmitter {
                             listener.callback(...args);
                         };
                     }
-                    this.events.set(event, listeners.filter((listener) => listener.once === false));
+                    this.events.set(event, listeners.filter((listener) => {
+                        const once = listener.once;
+                        if (!listener?.emitter) return once;
+                        return true;
+                    }));
                 }
             });
         }
         for (const emitter of this.#customEmitters) {
             for (const event of emitter.events) {
-                emitter.on((event, ...args) => {
+                emitter.emitter.on(event, (...args) => {
                     this.emit(emitter.name, event, ...args);
                     if (this.events.has(event)) {
                         const listeners = this.events.get(event);
