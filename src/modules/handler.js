@@ -114,7 +114,7 @@ module.exports = class Handler extends EventEmitter {
             });
         }
         for (const emitter of this.#customEmitters) {
-            for (const event of emitter) {
+            for (const event of emitter.events) {
                 emitter.on((event, ...args) => {
                     this.emit(emitter.name, event, ...args);
                     if (this.events.has(event)) {
