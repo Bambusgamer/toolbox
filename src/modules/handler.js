@@ -58,11 +58,11 @@ module.exports = class Handler extends EventEmitter {
         super();
         const { events, commands, interactions } = paths;
         this.#client = client;
-        if (events && typeof events === 'string') throw new Error('Events path must be a string');
+        if (events && typeof events !== 'string') throw new Error('Events path must be a string');
         if (events) this.#eventsPath = _path.join(this.#getInstPath(), events);
-        if (commands && typeof commands === 'string') throw new Error('Commands path must be a string');
+        if (commands && typeof commands !== 'string') throw new Error('Commands path must be a string');
         if (commands) this.#commandsPath = _path.join(this.#getInstPath(), commands);
-        if (interactions && typeof interactions === 'string') throw new Error('Interactions path must be a string');
+        if (interactions && typeof interactions !== 'string') throw new Error('Interactions path must be a string');
         if (interactions) this.#interactionsPath = _path.join(this.#getInstPath(), interactions);
         if (customEmitters && !Array.isArray(customEmitters)) throw new Error('Custom emitters must be an array');
         if (customEmitters) this.#customEmitters = customEmitters;
