@@ -22,6 +22,7 @@ module.exports = class Handler extends EventEmitter {
     #eventsPath = null;
     #commandsPath = null;
     #interactionsPath = null;
+    #customEmitters = null;
     /**
      * Returns the path from where the Handler was called
      * @return {string} path of the instance
@@ -51,14 +52,20 @@ module.exports = class Handler extends EventEmitter {
      * @param {string} paths.commands The path to the commands folder
      * @param {string} paths.interactions The path to the interactions folder
      * @param {string} restToken The token to use for the rest client
+     * @param {array} customEmitters The custom emitters to listen to
      */
-    constructor(client, paths, restToken) {
+    constructor(client, paths, restToken, customEmitters) {
         super();
         const { events, commands, interactions } = paths;
         this.#client = client;
+        if (events && typeof events === 'string') throw new Error('Events path must be a string');
         if (events) this.#eventsPath = _path.join(this.#getInstPath(), events);
+        if (commands && typeof commands === 'string') throw new Error('Commands path must be a string');
         if (commands) this.#commandsPath = _path.join(this.#getInstPath(), commands);
+        if (interactions && typeof interactions === 'string') throw new Error('Interactions path must be a string');
         if (interactions) this.#interactionsPath = _path.join(this.#getInstPath(), interactions);
+        if (customEmitters && !Array.isArray(customEmitters)) throw new Error('Custom emitters must be an array');
+        if (customEmitters) this.#customEmitters = customEmitters;
         this.events = new Collection();
         this.slashCommands = new Collection();
         this.BetaSlashCommands = new Collection();
@@ -98,11 +105,34 @@ module.exports = class Handler extends EventEmitter {
                 if (this.events.has(event)) {
                     const listeners = this.events.get(event);
                     for (const listener of listeners) {
-                        listener.callback(...args);
+                        if (!listener?.emitter) {
+                            listener.callback(...args);
+                        };
                     }
                     this.events.set(event, listeners.filter((listener) => listener.once === false));
                 }
             });
+        }
+        for (const emitter of this.#customEmitters) {
+            for (const event of emitter) {
+                emitter.on((event, ...args) => {
+                    this.emit(emitter.name, event, ...args);
+                    if (this.events.has(event)) {
+                        const listeners = this.events.get(event);
+                        for (const listener of listeners) {
+                            if (listener?.emitter === emitter.name) {
+                                listener.callback(...args);
+                            };
+                        }
+                        this.events.set(event, listeners.filter((listener) => {
+                            const once = listener.once;
+                            if (listener?.emitter === emitter.name) {
+                                return once;
+                            } else return true;
+                        }));
+                    }
+                });
+            }
         }
     }
     /**
