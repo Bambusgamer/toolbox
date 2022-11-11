@@ -193,7 +193,7 @@ module.exports = class Handler extends EventEmitter {
             const folders = elements.filter((element) => element.isDirectory());
             const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
             const loadFile = (file) => {
-                const fileName = file.split('\\').pop().split('.')[0];
+                const fileName = file.split('\\').pop().split('/').pop().split('.')[0];
                 delete require.cache[require.resolve(_path.join(this.#eventsPath, file))];
                 if (file.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const event = require(_path.join(this.#eventsPath, file));
@@ -237,7 +237,7 @@ module.exports = class Handler extends EventEmitter {
             const folders = elements.filter((element) => element.isDirectory());
             const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
             const loadFile = (file) => {
-                const fileName = file.split('\\').pop().split('.')[0];
+                const fileName = file.split('\\').pop().split('/').pop().split('.')[0];
                 delete require.cache[require.resolve(_path.join(this.#interactionsPath, file))];
                 if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const interaction = require(_path.join(this.#interactionsPath, file));
@@ -275,7 +275,7 @@ module.exports = class Handler extends EventEmitter {
             const folders = elements.filter((element) => element.isDirectory());
             const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
             const loadFile = (file) => {
-                const fileName = file.split('\\').pop().split('.')[0];
+                const fileName = file.split('\\').pop().split('/').pop().split('.')[0];
                 delete require.cache[require.resolve(_path.join(this.#commandsPath, file))];
                 if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const command = require(_path.join(this.#commandsPath, file));
