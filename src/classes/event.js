@@ -37,7 +37,7 @@ class EventBuilder {
      * @param {object} obj.callback.modules The modules
      * @param {Client} obj.callback.client The client
      */
-    constructor({ name, once = false, emitter = null, callback }) {
+    constructor({ name, once = false, emitter = null, callback, ...options }) {
         if (!name || typeof name !== 'string') throw new Error('Invalid event name');
         if (emitter && typeof emitter !== 'string') throw new Error('Invalid event emitter');
         if (!callback || typeof callback !== 'function') throw new Error('Invalid event callback');
@@ -45,6 +45,9 @@ class EventBuilder {
         this.once = once;
         this.emitter = emitter;
         this.callback = callback.bind(null, EventBuilder.modules);
+        for (const [key, value] of Object.entries(options)) {
+            this[key] = value;
+        }
     }
 };
 

@@ -36,11 +36,14 @@ class InteractionBuilder {
      * @param {Client} obj.callback.client The client
      * @param {Interaction} obj.callback.interaction The interaction
      */
-    constructor({ customId, callback }) {
+    constructor({ customId, callback, ...options }) {
         if (!customId || typeof customId !== 'string') throw new Error('Invalid interaction customId');
         if (!callback || typeof callback !== 'function') throw new Error('Invalid interaction callback');
         this.customId = customId;
         this.callback = callback.bind(null, InteractionBuilder.modules);
+        for (const [key, value] of Object.entries(options)) {
+            this[key] = value;
+        }
     }
     /**
      * Returns the name associated with the interaction
