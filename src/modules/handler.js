@@ -111,7 +111,7 @@ module.exports = class Handler extends EventEmitter {
                     }
                     this.events.set(event, listeners.filter((listener) => {
                         const once = listener.once;
-                        if (!listener?.emitter) return once;
+                        if (!listener?.emitter) return !once;
                         return true;
                     }));
                 }
@@ -131,7 +131,7 @@ module.exports = class Handler extends EventEmitter {
                         this.events.set(event, listeners.filter((listener) => {
                             const once = listener.once;
                             if (listener?.emitter === emitter.name) {
-                                return once;
+                                return !once;
                             } else return true;
                         }));
                     }
