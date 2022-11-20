@@ -44,6 +44,7 @@ class EventBuilder {
         this.name = name;
         this.once = once;
         this.emitter = emitter;
+        this.callback = callback;
         for (const [key, value] of Object.entries(options)) {
             this[key] = value;
         }

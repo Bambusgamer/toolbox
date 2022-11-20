@@ -40,6 +40,7 @@ class InteractionBuilder {
         if (!customId || typeof customId !== 'string') throw new Error('Invalid interaction customId');
         if (!callback || typeof callback !== 'function') throw new Error('Invalid interaction callback');
         this.customId = customId;
+        this.callback = callback;
         for (const [key, value] of Object.entries(options)) {
             this[key] = value;
         }
