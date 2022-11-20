@@ -7,6 +7,7 @@ const { REST } = require('@discordjs/rest');
 const {
     Collection,
     Routes,
+    Client,
 } = require('discord.js');
 const Logger = require('./logger');
 const Config = require('./config');
@@ -46,18 +47,21 @@ module.exports = class Handler extends EventEmitter {
     }
     /**
      * Initializes the handler module
-     * @param {customclient} client The client to attach the collections to
-     * @param {object} paths The paths to use relative to from where the constructor is called
-     * @param {string} paths.events The path to the events folder
-     * @param {string} paths.commands The path to the commands folder
-     * @param {string} paths.interactions The path to the interactions folder
-     * @param {string} restToken The token to use for the rest client
-     * @param {array} customEmitters The custom emitters to listen to
+     * @param {object} obj Handler options
+     * @param {customclient} obj.client The client to attach the collections to
+     * @param {object} obj.paths The paths to use relative to from where the constructor is called
+     * @param {string} obj.paths.events The path to the events folder
+     * @param {string} obj.paths.commands The path to the commands folder
+     * @param {string} obj.paths.interactions The path to the interactions folder
+     * @param {string} obj.restToken The token to use for the rest client
+     * @param {array} obj.customEmitters The custom emitters to listen to
      */
-    constructor(client, paths, restToken, customEmitters) {
+    constructor({ client, paths, restToken, customEmitters }) {
         super();
         const { events, commands, interactions } = paths;
         this.#client = client;
+        if (!client) throw new Error('Client is required to hydrate command');
+        if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
         if (events && typeof events !== 'string') throw new Error('Events path must be a string');
         if (events) this.#eventsPath = _path.join(this.#getInstPath(), events);
         if (commands && typeof commands !== 'string') throw new Error('Commands path must be a string');
@@ -187,7 +191,6 @@ module.exports = class Handler extends EventEmitter {
      */
     #loadEvents() {
         let success = true;
-        const client = this.#client;
         try {
             const elements = fs.readdirSync(this.#eventsPath, { withFileTypes: true });
             const folders = elements.filter((element) => element.isDirectory());
@@ -198,7 +201,7 @@ module.exports = class Handler extends EventEmitter {
                 if (file.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const event = require(_path.join(this.#eventsPath, file));
                 if (!(event instanceof EventBuilder)) return;
-                event.callback = event.callback.bind(null, client);
+                event.hydrate(this.#client);
                 let listeners = this.events.get(event.name);
                 if (!listeners) {
                     listeners = new Array(event);
@@ -242,6 +245,7 @@ module.exports = class Handler extends EventEmitter {
                 if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const interaction = require(_path.join(this.#interactionsPath, file));
                 if (!(interaction instanceof InteractionBuilder)) return;
+                interaction.hydrate(this.#client);
                 this.interactions.set(interaction.name, interaction);
                 Logger.infog(`${fileName} loaded`);
             };
@@ -325,11 +329,10 @@ module.exports = class Handler extends EventEmitter {
             this.slashCommands.forEach((command) => {
                 body.push(command.data);
             });
-            const data = await this.#rest.put(
+            this.#rest.put(
                 Routes.applicationCommands(this.#client.user.id),
                 { body },
-            );
-            Logger.infog(`Registered ${data.length} slash commands`);
+            ).then((data) => Logger.infog(`Registered ${data.length} slash commands`));
         } catch (err) {
             Logger.error(err);
             return false;
@@ -364,11 +367,10 @@ module.exports = class Handler extends EventEmitter {
                 return false;
             }
             if (!guildId || typeof guildId !== 'string') return (Logger.warn('Invalid guild id') && false);
-            const data = await this.#rest.put(
+            this.#rest.put(
                 Routes.applicationGuildCommands(this.#client.user.id, guildId),
                 { body },
-            );
-            Logger.infog(`Registered ${data.length} beta slash commands`);
+            ).then((data) => Logger.infog(`Registered ${data.length} beta slash commands`));
         } catch (err) {
             Logger.error(err);
             return false;
@@ -386,7 +388,8 @@ module.exports = class Handler extends EventEmitter {
         try {
             if (!this.#ready()) return (Logger.error('Client and rest not ready') && false);
             if (!commandId || typeof commandId !== 'string') return (Logger.warn('Invalid command id') && false);
-            if (!guildId || typeof guildId !== 'string') {
+            if (guildId && typeof guildId !== 'string') return (Logger.warn('Invalid guild id') && false);
+            if (!guildId) {
                 await this.#rest.delete(
                     Routes.applicationCommand(this.#client.user.id, commandId),
                 );

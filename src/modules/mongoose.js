@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Logger = require('./logger');
 const Config = require('./config');
+const wait = require('node:timers/promises').setTimeout;
 
 module.exports = class Mongoose {
     static called = false;
@@ -15,7 +16,7 @@ module.exports = class Mongoose {
         mongoose.connection.on('connected', () => Logger.info(`√ Connected to MongoDB!`));
         mongoose.connection.on('disconnected', async () => {
             Logger.warn(`██ Disconnected from MongoDB!`);
-            await client.wait(5000);
+            await wait(5000);
             Logger.warn(`██ Attempting to reconnect to MongoDB...`);
             connect();
         });

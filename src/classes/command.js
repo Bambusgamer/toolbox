@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable no-unused-vars */
 const {
     Client,
@@ -103,17 +104,17 @@ class CommandBuilder {
         if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
         if (this.hasSlash) {
             this.slash.data = this.slash.data(new SlashCommandBuilder(), client, CommandBuilder.modules);
-            if (this.slash.autocomplete) this.slash.autocomplete = this.slash.autocomplete.bind(null, CommandBuilder.modules);
-            this.slash.callback = this.slash.callback.bind(null, CommandBuilder.modules);
+            if (this.slash.autocomplete) this.slash.autocomplete = this.slash.autocomplete.bind(null, client, CommandBuilder.modules);
+            this.slash.callback = this.slash.callback.bind(null, client, CommandBuilder.modules);
         }
         if (this.hasBetaSlash) {
             this.betaSlash.data = this.betaSlash.data(new SlashCommandBuilder(), client, CommandBuilder.modules);
-            if (this.betaSlash.autocomplete) this.betaSlash.autocomplete = this.betaSlash.autocomplete.bind(null, CommandBuilder.modules);
-            this.betaSlash.callback = this.betaSlash.callback.bind(null, CommandBuilder.modules);
+            if (this.betaSlash.autocomplete) this.betaSlash.autocomplete = this.betaSlash.autocomplete.bind(null, client, CommandBuilder.modules);
+            this.betaSlash.callback = this.betaSlash.callback.bind(null, client, CommandBuilder.modules);
         }
         if (this.hasText) {
             this.text.data = this.text.data(client, CommandBuilder.modules);
-            this.text.callback = this.text.callback.bind(null, CommandBuilder.modules);
+            this.text.callback = this.text.callback.bind(null, client, CommandBuilder.modules);
         }
     }
 

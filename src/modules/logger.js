@@ -43,7 +43,7 @@ module.exports = class Logger {
      * @param {string} level The level of the log [LOG, INFO, INFOH, INFOT, WARN, ERROR, FATAL] (default: LOG) wich will be used to color the output
      */
     static console(data, level) {
-        const Config = require('./config');
+        const Config = require('./config.js');
         switch (level) {
             case 'INFOY':
                 console.log(colors.yellow(`${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
@@ -182,20 +182,24 @@ module.exports = class Logger {
     /**
      * Initializes the logger
      * @constructor
-     * @param {Object} options The options for the logger (_env.toolbox)
-     * @param {string} options.logpath The path to the log file relative to from where the constructor is called
-     * @param {string} options.logserver The url to the log server
-     * @param {string} options.logservertoken The token for the log server
-     * @param {string} options.appid The appid for the log server
+     * @param {Object} obj The options for the logger (_env.toolbox)
+     * @param {string} obj.logpath The path to the log file relative to from where the constructor is called
+     * @param {string} obj.logserver The url to the log server
+     * @param {string} obj.logservertoken The token for the log server
+     * @param {string} obj.appid The appid for the log server
      */
-    constructor(options) {
-        const { logpath, logserver, logservertoken, appid } = options;
+    constructor({ logpath, logserver, logservertoken, appid }) {
         if (!Logger.called) {
             Logger.called = true;
+            if (logpath && !typeof logpath === 'string') throw new Error('logpath must be a string');
             Logger.path = logpath ? _path.join(this.#getInstPath(), logpath) : null;
             Logger.filestream = Logger.path ? new Console({ stdout: fs.createWriteStream(Logger.path, { flags: 'a+' }), stderr: fs.createWriteStream(Logger.path, { flags: 'a+' }) }) : null;
+            if (logserver && !typeof logserver === 'string') throw new Error('logserver must be a string');
+            if (logserver && !logserver.startsWith('http')) throw new Error('logserver must be a valid http url');
             Logger.logserver = logserver;
+            if (logservertoken && !typeof logservertoken === 'string') throw new Error('logservertoken must be a string');
             Logger.logservertoken = logservertoken;
+            if (appid && !typeof appid === 'string') throw new Error('appid must be a string');
             Logger.appid = appid;
             Logger.info(`Logger module initialized`);
         } else throw new Error('Logger is already initialized');

@@ -40,11 +40,21 @@ class InteractionBuilder {
         if (!customId || typeof customId !== 'string') throw new Error('Invalid interaction customId');
         if (!callback || typeof callback !== 'function') throw new Error('Invalid interaction callback');
         this.customId = customId;
-        this.callback = callback.bind(null, InteractionBuilder.modules);
         for (const [key, value] of Object.entries(options)) {
             this[key] = value;
         }
     }
+
+    /**
+     * Hydrates the interaction
+     * @param {Client} client The client
+     */
+    hydrate(client) {
+        if (!client) throw new Error('Client is required to hydrate command');
+        if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
+        this.callback = this.callback.bind(null, client, InteractionBuilder.modules);
+    }
+
     /**
      * Returns the name associated with the interaction
      * @return {string}

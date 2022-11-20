@@ -44,10 +44,19 @@ class EventBuilder {
         this.name = name;
         this.once = once;
         this.emitter = emitter;
-        this.callback = callback.bind(null, EventBuilder.modules);
         for (const [key, value] of Object.entries(options)) {
             this[key] = value;
         }
+    }
+
+    /**
+     * Hydrates the event
+     * @param {Client} client The client
+     */
+    hydrate(client) {
+        if (!client) throw new Error('Client is required to hydrate command');
+        if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
+        this.callback = this.callback.bind(null, client, EventBuilder.modules);
     }
 };
 

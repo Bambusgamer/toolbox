@@ -106,13 +106,14 @@ module.exports = class Config {
     }
     /**
      * Initializes the config server connection data
-     * @param {string} server The config server url
-     * @param {string} token The token to access the config server
-     * @param {string} app The application id
-     * @param {string} node The node id
+     * @param {object} obj Connection details
+     * @param {string} obj.server The config server url
+     * @param {string} obj.token The token to access the config server
+     * @param {string} obj.app The application id
+     * @param {string} obj.node The node id
      */
-    constructor(server, token, app, node) {
-        const Logger = require('./logger');
+    constructor({ server, token, app, node }) {
+        const Logger = require('./logger.js');
         if (!server || !token || !app || !node) throw new Error('Invalid config server data');
         this.#CONFIGSERVER = server;
         this.#CONFIGSERVERTOKEN = token;
