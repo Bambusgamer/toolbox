@@ -111,7 +111,11 @@ module.exports = class Handler extends EventEmitter {
                     const listeners = this.events.get(event);
                     for (const listener of listeners) {
                         if (!listener?.emitter) {
-                            listener.callback(...args);
+                            try {
+                                listener.callback(...args);
+                            } catch (err) {
+                                Logger.error(err);
+                            }
                         };
                     }
                     this.events.set(event, listeners.filter((listener) => {
@@ -130,7 +134,11 @@ module.exports = class Handler extends EventEmitter {
                         const listeners = this.events.get(event);
                         for (const listener of listeners) {
                             if (listener?.emitter === emitter.name) {
-                                listener.callback(...args);
+                                try {
+                                    listener.callback(...args);
+                                } catch (err) {
+                                    Logger.error(err);
+                                }
                             };
                         }
                         this.events.set(event, listeners.filter((listener) => {
@@ -156,13 +164,17 @@ module.exports = class Handler extends EventEmitter {
         }
         if (this.#eventsPath) {
             Logger.infoy('\nEvents:');
-            success = success && this.#loadEvents();
+            success = this.#loadEvents() && success;
         }
         if (this.#interactionsPath) {
             Logger.infoy('\nInteractions:');
-            success = success && this.#loadInteractions();
+            success = this.#loadInteractions() && success;
         }
         if (this.#commandsPath || this.#interactionsPath || this.#eventsPath) Logger.newline();
+        if (!success) {
+            Logger.warn('Handler failed to load');
+            this.#restore();
+        }
         return success;
     }
     /**
@@ -172,11 +184,11 @@ module.exports = class Handler extends EventEmitter {
      */
     clear() {
         this.#oldstate = {
-            events: this.events,
-            slashCommands: this.slashCommands,
-            BetaSlashCommands: this.BetaSlashCommands,
-            textCommands: this.textCommands,
-            interactions: this.interactions,
+            events: this.events.clone(),
+            slashCommands: this.slashCommands.clone(),
+            BetaSlashCommands: this.BetaSlashCommands.clone(),
+            textCommands: this.textCommands.clone(),
+            interactions: this.interactions.clone(),
         };
         this.events.clear();
         this.interactions.clear();
@@ -203,6 +215,7 @@ module.exports = class Handler extends EventEmitter {
             this.slashCommands = this.#oldstate.slashCommands;
             this.BetaSlashCommands = this.#oldstate.BetaSlashCommands;
             this.textCommands = this.#oldstate.textCommands;
+            Logger.infoy('Restored old state');
         }
     }
     /**
@@ -246,7 +259,6 @@ module.exports = class Handler extends EventEmitter {
         } catch (err) {
             Logger.error(err);
             success = false;
-            this.#restore();
         }
         return success;
     }
@@ -286,7 +298,6 @@ module.exports = class Handler extends EventEmitter {
         } catch (err) {
             Logger.error(err);
             success = false;
-            this.#restore();
         }
         return success;
     }
@@ -337,7 +348,6 @@ module.exports = class Handler extends EventEmitter {
         } catch (err) {
             Logger.error(err);
             success = false;
-            this.#restore();
         }
         return success;
     }
