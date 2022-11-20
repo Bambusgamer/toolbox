@@ -24,6 +24,7 @@ module.exports = class Handler extends EventEmitter {
     #commandsPath = null;
     #interactionsPath = null;
     #customEmitters = null;
+    #oldstate = null;
     /**
      * Returns the path from where the Handler was called
      * @return {string} path of the instance
@@ -170,6 +171,13 @@ module.exports = class Handler extends EventEmitter {
      * @private
      */
     clear() {
+        this.#oldstate = {
+            events: this.events,
+            slashCommands: this.slashCommands,
+            BetaSlashCommands: this.BetaSlashCommands,
+            textCommands: this.textCommands,
+            interactions: this.interactions,
+        };
         this.events.clear();
         this.interactions.clear();
         this.slashCommands.clear();
@@ -183,6 +191,19 @@ module.exports = class Handler extends EventEmitter {
     reload() {
         this.clear();
         return this.load();
+    }
+    /**
+     * Restores all the events, commands and interactions if a reload fails
+     * @private
+     */
+    #restore() {
+        if (this.#oldstate) {
+            this.events = this.#oldstate.events;
+            this.interactions = this.#oldstate.interactions;
+            this.slashCommands = this.#oldstate.slashCommands;
+            this.BetaSlashCommands = this.#oldstate.BetaSlashCommands;
+            this.textCommands = this.#oldstate.textCommands;
+        }
     }
     /**
      * Loads all the events
@@ -225,6 +246,7 @@ module.exports = class Handler extends EventEmitter {
         } catch (err) {
             Logger.error(err);
             success = false;
+            this.#restore();
         }
         return success;
     }
@@ -264,6 +286,7 @@ module.exports = class Handler extends EventEmitter {
         } catch (err) {
             Logger.error(err);
             success = false;
+            this.#restore();
         }
         return success;
     }
@@ -314,6 +337,7 @@ module.exports = class Handler extends EventEmitter {
         } catch (err) {
             Logger.error(err);
             success = false;
+            this.#restore();
         }
         return success;
     }
