@@ -58,7 +58,7 @@ module.exports = class Logger {
                 console.log(colors.orange(`[${timestamp().text}] | ${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
                 break;
             case 'ERROR':
-                console.log(colors.red(`[${timestamp().text}] | `, data));
+                console.log(colors.red(`[${timestamp().text}] | `), data);
                 break;
             case 'FATAL':
                 console.log(colors.red(`[${timestamp().text}] |`), data[0], data[1] || '');
