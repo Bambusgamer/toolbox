@@ -1,6 +1,6 @@
 const path = require('path');
 const Logger = require('./logger');
-const Server = require('./Server');
+const Server = require('./server');
 
 /**
  * @class Config
