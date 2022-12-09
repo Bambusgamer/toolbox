@@ -55,7 +55,7 @@ module.exports = class Config {
             Config.called = true;
             if (Server.app) {
                 Server.app.post('/Config/reload', (req, res) => {
-                    const success = this.reload();
+                    const success = Config.reload();
                     res.sendStatus(success ? 200 : 500);
                 });
             };
