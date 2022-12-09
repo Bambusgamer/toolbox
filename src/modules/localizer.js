@@ -1,10 +1,10 @@
-const pathJS = require('path');
+const path = require('path');
 const statics = require('../util/statics');
-const Config = require('./config');
 const Logger = require('./logger');
+const Server = require('./server');
 
 module.exports = class Localizer {
-    static path = null;
+    #languagePackPath = null;
     static languagePack = {
         defaultLanguage: null,
         languages: {},
@@ -19,41 +19,40 @@ module.exports = class Localizer {
         const frame = stack.split('\n')[3].trim();
         // Credits to discord@A7mooz#2962 for the regex
         const regex = /([A-Z]:)?((\/|\\)(\w\.?)+)+\3/g;
-        const path = regex.exec(frame)[0].replace(/\\/g, '/');
-        return path;
+        const instancePath = regex.exec(frame)[0].replace(/\\/g, '/');
+        return instancePath;
+    }
+    /**
+     * Loads the language pack
+     * @return {object} Returns the language pack
+     */
+    #reload() {
+        const old = Localizer.languagePack;
+        try {
+            delete require.cache[require.resolve(this.#languagePackPath)];
+            this.#setLanguagePack(require(this.#languagePackPath));
+            return true;
+        } catch (e) {
+            Localizer.languagePack = old;
+            Logger.error('Failed to load language pack');
+            return false;
+        }
     }
     /**
      * Creates a new Localizer
-     * @param {string} path The path of the config relative to from where the constructor is called
+     * @param {string} languagePackPath The path of the config relative to from where the constructor is called
      */
-    constructor(path) {
-        if (!path || typeof path !== 'string') throw new Error('Invalid config path');
+    constructor(languagePackPath) {
+        if (!languagePackPath || typeof languagePackPath !== 'string') throw new Error('Invalid config path');
         const instance = this.#getInstPath();
-        Localizer.path = pathJS.join(instance, path);
-        if (Config.App) {
-            Config.App.post('/Localizer/reload', (req, res) => {
-                try {
-                    delete require.cache[require.resolve(Localizer.path)];
-                    const pack = require(Localizer.path);
-                    if (!this.#setLanguagePack(pack)) {
-                        return res.sendStatus(500);
-                    } else {
-                        Logger.info('Language pack reloaded');
-                        return res.sendStatus(200);
-                    }
-                } catch (e) {
-                    res.sendStatus(500);
-                };
+        this.#languagePackPath = path.join(instance, languagePackPath);
+        if (Server.app) {
+            Server.app.post('/Localizer/reload', (req, res) => {
+                const success = this.#reload();
+                res.sendStatus(success ? 200 : 500);
             });
         }
-        let pack = null;
-        try {
-            pack = require(Localizer.path);
-        } catch (e) {
-            throw new Error('Invalid config path');
-        }
-        if (!this.#setLanguagePack(pack)) throw new Error('Invalid language pack');
-        else Logger.info('Language pack loaded');
+        this.#reload();
     }
     /**
      * Sets the language pack and validates it

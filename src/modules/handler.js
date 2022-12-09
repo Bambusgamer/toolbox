@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-vars */
 const EventEmitter = require('events');
 const fs = require('fs');
-const _path = require('path');
+const path = require('path');
 const { REST } = require('@discordjs/rest');
 const {
     Collection,
@@ -10,7 +10,6 @@ const {
     Client,
 } = require('discord.js');
 const Logger = require('./logger');
-const Config = require('./config');
 const statics = require('../util/statics');
 const CommandBuilder = require('../classes/command');
 const EventBuilder = require('../classes/event');
@@ -34,8 +33,8 @@ module.exports = class Handler extends EventEmitter {
         const frame = stack.split('\n')[3].trim();
         // Credits to discord@A7mooz#2962 for the regex
         const regex = /([A-Z]:)?((\/|\\)(\w\.?)+)+\3/g;
-        const path = regex.exec(frame)[0].replace(/\\/g, '/');
-        return path;
+        const instancePath = regex.exec(frame)[0].replace(/\\/g, '/');
+        return instancePath;
     }
     /**
      * Checks if the Handler is ready to register slash commands
@@ -64,11 +63,11 @@ module.exports = class Handler extends EventEmitter {
         if (!client) throw new Error('Client is required to hydrate command');
         if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
         if (events && typeof events !== 'string') throw new Error('Events path must be a string');
-        if (events) this.#eventsPath = _path.join(this.#getInstPath(), events);
+        if (events) this.#eventsPath = path.join(this.#getInstPath(), events);
         if (commands && typeof commands !== 'string') throw new Error('Commands path must be a string');
-        if (commands) this.#commandsPath = _path.join(this.#getInstPath(), commands);
+        if (commands) this.#commandsPath = path.join(this.#getInstPath(), commands);
         if (interactions && typeof interactions !== 'string') throw new Error('Interactions path must be a string');
-        if (interactions) this.#interactionsPath = _path.join(this.#getInstPath(), interactions);
+        if (interactions) this.#interactionsPath = path.join(this.#getInstPath(), interactions);
         if (customEmitters && !Array.isArray(customEmitters)) throw new Error('Custom emitters must be an array');
         if (customEmitters) this.#customEmitters = customEmitters;
         this.events = new Collection();
@@ -76,11 +75,10 @@ module.exports = class Handler extends EventEmitter {
         this.BetaSlashCommands = new Collection();
         this.textCommands = new Collection();
         this.interactions = new Collection();
-        if (Config.App) {
-            Config.App.post('/Handler/reload', (req, res) => {
+        if (Server.app) {
+            Server.app.post('/Handler/reload', (req, res) => {
                 Logger.info(`Reloading handler from ${req.ip}`);
-                this.clear();
-                const success = this.load();
+                const success = this.reload();
                 res.sendStatus(success ? 200 : 500);
             });
             Logger.info('Handler API enabled');
@@ -231,9 +229,9 @@ module.exports = class Handler extends EventEmitter {
             const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
             const loadFile = (file) => {
                 const fileName = file.split('\\').pop().split('/').pop().split('.')[0];
-                delete require.cache[require.resolve(_path.join(this.#eventsPath, file))];
+                delete require.cache[require.resolve(path.join(this.#eventsPath, file))];
                 if (file.startsWith('_')) return Logger.infog(`${fileName} skipped`);
-                const event = require(_path.join(this.#eventsPath, file));
+                const event = require(path.join(this.#eventsPath, file));
                 if (!(event instanceof EventBuilder)) return;
                 event.hydrate(this.#client);
                 let listeners = this.events.get(event.name);
@@ -244,12 +242,12 @@ module.exports = class Handler extends EventEmitter {
                 Logger.infog(`${event.name} loaded`);
             };
             for (const folder of folders) {
-                const folderPath = _path.join(this.#eventsPath, folder.name);
+                const folderPath = path.join(this.#eventsPath, folder.name);
                 const folderElements = fs.readdirSync(folderPath, { withFileTypes: true });
                 const folderFiles = folderElements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
                 if (folderFiles.length > 0) Logger.infoy(`\n${folder.name} events`);
                 for (const file of folderFiles) {
-                    loadFile(_path.join(folder.name, file.name));
+                    loadFile(path.join(folder.name, file.name));
                 };
             };
             if (files.length > 0) Logger.infoy('\nroot events');
@@ -275,20 +273,20 @@ module.exports = class Handler extends EventEmitter {
             const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
             const loadFile = (file) => {
                 const fileName = file.split('\\').pop().split('/').pop().split('.')[0];
-                delete require.cache[require.resolve(_path.join(this.#interactionsPath, file))];
+                delete require.cache[require.resolve(path.join(this.#interactionsPath, file))];
                 if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
-                const interaction = require(_path.join(this.#interactionsPath, file));
+                const interaction = require(path.join(this.#interactionsPath, file));
                 if (!(interaction instanceof InteractionBuilder)) return;
                 interaction.hydrate(this.#client);
                 this.interactions.set(interaction.name, interaction);
                 Logger.infog(`${fileName} loaded`);
             };
             for (const folder of folders) {
-                const folderElements = fs.readdirSync(_path.join(this.#interactionsPath, folder.name), { withFileTypes: true });
+                const folderElements = fs.readdirSync(path.join(this.#interactionsPath, folder.name), { withFileTypes: true });
                 const folderFiles = folderElements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
                 if (folderFiles.length > 0) Logger.infoy(`\n${folder.name} interactions`);
                 for (const file of folderFiles) {
-                    loadFile(_path.join(folder.name, file.name));
+                    loadFile(path.join(folder.name, file.name));
                 };
             };
             if (files.length > 0) Logger.infoy('\nroot interactions');
@@ -314,9 +312,9 @@ module.exports = class Handler extends EventEmitter {
             const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
             const loadFile = (file) => {
                 const fileName = file.split('\\').pop().split('/').pop().split('.')[0];
-                delete require.cache[require.resolve(_path.join(this.#commandsPath, file))];
+                delete require.cache[require.resolve(path.join(this.#commandsPath, file))];
                 if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
-                const command = require(_path.join(this.#commandsPath, file));
+                const command = require(path.join(this.#commandsPath, file));
                 if (!(command instanceof CommandBuilder)) return;
                 command.hydrate(this.#client);
                 if (command.hasSlash) {
@@ -334,11 +332,11 @@ module.exports = class Handler extends EventEmitter {
                 Logger.infog(`${fileName} loaded`);
             };
             for (const folder of folders) {
-                const folderElements = fs.readdirSync(_path.join(this.#commandsPath, folder.name), { withFileTypes: true });
+                const folderElements = fs.readdirSync(path.join(this.#commandsPath, folder.name), { withFileTypes: true });
                 const folderFiles = folderElements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
                 if (folderFiles.length > 0) Logger.infoy(`\n${folder.name} commands`);
                 for (const file of folderFiles) {
-                    loadFile(_path.join(folder.name, file.name));
+                    loadFile(path.join(folder.name, file.name));
                 }
             }
             if (files.length > 0) Logger.infoy('\nroot commands');

@@ -1,12 +1,10 @@
 const { Console } = require('console');
 const moment = require('moment');
 const chalk = require('chalk');
-const axios = require('axios');
 const fs = require('fs');
-const _path = require('path');
+const path = require('path');
 
-const timestamp = () => ({ text: moment().format('YYYY-MM-DD HH:mm:ss'), unix: moment().unix() });
-const stringify = (obj) => typeof obj == 'object' ? JSON.stringify(obj, 10, 2) : obj;
+const timestamp = () => `[${moment().format('YYYY-MM-DD HH:mm:ss')}] | `;
 const trace = () => new Error().stack.split('\n').slice(4).join('\n').trim();
 const colors = {
     white: chalk.white,
@@ -20,11 +18,8 @@ const colors = {
 module.exports = class Logger {
     // Static fields
     static called = false;
-    static path = null;
-    static server = null;
-    static token = null;
-    static appid = null;
-    static filestream = null;
+    static logPath = null;
+    static fileStream = null;
     /**
      * Returns the path from where the Handler was called
      * @return {string} path of the instance
@@ -34,8 +29,8 @@ module.exports = class Logger {
         const frame = stack.split('\n')[3].trim();
         // Credits to discord@A7mooz#2962 for the regex
         const regex = /([A-Z]:)?((\/|\\)(\w\.?)+)+\3/g;
-        const path = regex.exec(frame)[0].replace(/\\/g, '/');
-        return path;
+        const instancePath = regex.exec(frame)[0].replace(/\\/g, '/');
+        return instancePath;
     }
     /**
      * Logs content to the console
@@ -44,79 +39,45 @@ module.exports = class Logger {
      */
     static console(data, level) {
         const Config = require('./config.js');
+        const output = Config._env?.toolbox?.trace ? [...data, trace()] : data;
         switch (level) {
-            case 'INFOY':
-                console.log(colors.yellow(`${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
+            // infoy
+            case 1:
+                console.log(colors.yellow(timestamp()), ...output);
                 break;
-            case 'INFOG':
-                console.log(colors.green(`[${timestamp().text}] | ${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
+            // infog
+            case 2:
+                console.log(colors.green(timestamp()), ...output);
                 break;
-            case 'INFO':
-                console.log(colors.blue(`[${timestamp().text}] | ${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
+            // infob
+            case 3:
+                console.log(colors.blue(timestamp()), ...output);
                 break;
-            case 'WARN':
-                console.log(colors.orange(`[${timestamp().text}] | ${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
+            // warn
+            case 4:
+                console.log(colors.orange(timestamp()), ...output);
                 break;
-            case 'ERROR':
-                console.log(colors.red(`[${timestamp().text}] | `), data);
+            // error
+            case 5:
+                console.log(colors.red(timestamp()), ...output);
                 break;
-            case 'FATAL':
-                console.log(colors.red(`[${timestamp().text}] |`), data[0], data[1] || '');
-                break;
-            case 'NEWLINE':
+            // newline
+            case 6:
                 console.log('');
                 break;
             default:
-                console.log(colors.white(`[${timestamp().text}] | ${stringify(data)}${Config._env?.toolbox?.trace ? `\n${trace()}` : ''}`));
+                console.log(colors.white(timestamp()), ...output);
                 break;
         }
     }
     /**
      * Logs content to a log file if a path was provided
      * @param {*} data Array of Promises or string to log
-     * @param {string} level The level of the log [LOG, INFO, INFOH, INFOT, WARN, ERROR, FATAL] (default: LOG) wich will be used to label the output
      */
-    static write(data, level) {
+    static write(data) {
         const Config = require('./config');
-        if (Logger.filestream) Logger.filestream.log(...[`[${timestamp().text}] |`, ...(level != 'FATAL' ? [data] : [data[0], data[1]]), !Config._env?.toolbox?.trace && level != 'FATAL' ? '' : `\n${trace()}`].map((obj) => typeof obj == 'string' ? obj.replace(/^\n+|\n+$/g, '') : obj));
-    }
-    /**
-     * Logs content to a log server if a server was provided
-     * @param {*} data Array of Promises or string to log
-     * @param {*} level The level of the log [LOG, INFO, INFOH, INFOT, WARN, ERROR, FATAL] (default: LOG) wich will be used to label the output
-     */
-    static send(data, level) {
-        if (Logger.logserver && Logger.logservertoken && Logger.appid) {
-            axios.post(Logger.logserver, {
-                token: Logger.logservertoken,
-                appid: Logger.appid,
-                data: JSON.stringify(data),
-                level,
-            }).catch((err) => {
-                if (err.code == 'ETIMEDOUT') return (this.console(`Server is not reachable.path: ${Logger.logserver} `, 'ERROR') && this.write(`Server is not reachable.path: ${Logger.logserver} `, 'ERROR'));
-                if (err.response.status === 401) return (this.console(`Logging server is not authorized`, 'ERROR') && this.write(`Logging server is not authorized`, 'ERROR'));
-            });
-        }
-    }
-    /**
-     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an default log
-     * white
-     * @param {string} data String to log
-     */
-    static log(data) {
-        this.console(data, 'LOG');
-        this.write(data, 'LOG');
-        this.send(data, 'LOG');
-    }
-    /**
-     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
-     * blue
-     * @param {string} data String to log
-     */
-    static info(data) {
-        this.console(data, 'INFO');
-        this.write(data, 'INFO');
-        this.send(data, 'INFO');
+        const output = Config._env?.toolbox?.trace ? [...data, trace()] : data;
+        if (Logger.fileStream) Logger.fileStream.log(timestamp(), ...output);
     }
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
@@ -124,9 +85,8 @@ module.exports = class Logger {
      * @param {string} data String to log
      */
     static infoy(data) {
-        this.console(data, 'INFOY');
-        this.write(data, 'INFOY');
-        this.send(data, 'INFOY');
+        this.console(data, 1);
+        this.write(data);
     }
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
@@ -134,9 +94,17 @@ module.exports = class Logger {
      * @param {string} data String to log
      */
     static infog(data) {
-        this.console(data, 'INFOG');
-        this.write(data, 'INFOG');
-        this.send(data, 'INFOG');
+        this.console(data, 2);
+        this.write(data);
+    }
+    /**
+     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
+     * blue
+     * @param {string} data String to log
+     */
+    static info(data) {
+        this.console(data, 3);
+        this.write(data);
     }
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a warning
@@ -144,9 +112,8 @@ module.exports = class Logger {
      * @param {string} data String to log
      */
     static warn(data) {
-        this.console(data, 'WARN');
-        this.write(data, 'WARN');
-        this.send(data, 'WARN');
+        this.console(data, 4);
+        this.write(data);
     }
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a error
@@ -154,53 +121,38 @@ module.exports = class Logger {
      * @param {string} data String to log
     */
     static error(data) {
-        this.console(data, 'ERROR');
-        this.write(data, 'ERROR');
-        this.send(data, 'ERROR');
+        this.console(data, 5);
+        this.write(data);
     }
     /**
-     * Logs content of the AntiCrash module to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a fatal
-     * red
-     * @param {array} data Array of Promises to log
+     * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an default log
+     * white
+     * @param {string} data String to log
      */
-    static fatal(data) {
-        this.console(data, 'FATAL');
-        this.write(data, 'FATAL');
-        this.send(data, 'FATAL');
+    static log(data) {
+        this.console(data, null);
+        this.write(data);
     }
     /**
      * Logs out a new line or multiple new lines
      * @param {number} lines Number of new lines to log out
-     * @param {boolean} write If the new lines should be written to the log file
      */
-    static newline(lines, write) {
+    static newline(lines) {
         for (let i = 0; i < (lines ?? 1); i++) {
-            this.console('', 'NEWLINE');
-            if (write) this.write('', 'NEWLINE');
+            this.console('', 6);
         }
     }
     /**
      * Initializes the logger
      * @constructor
-     * @param {Object} obj The options for the logger (_env.toolbox)
-     * @param {string} obj.logpath The path to the log file relative to from where the constructor is called
-     * @param {string} obj.logserver The url to the log server
-     * @param {string} obj.logservertoken The token for the log server
-     * @param {string} obj.appid The appid for the log server
+     * @param {string} logpath The path to the log file relative to from where the constructor is called
      */
-    constructor({ logpath, logserver, logservertoken, appid }) {
+    constructor(logpath) {
         if (!Logger.called) {
             Logger.called = true;
             if (logpath && !typeof logpath === 'string') throw new Error('logpath must be a string');
-            Logger.path = logpath ? _path.join(this.#getInstPath(), logpath) : null;
-            Logger.filestream = Logger.path ? new Console({ stdout: fs.createWriteStream(Logger.path, { flags: 'a+' }), stderr: fs.createWriteStream(Logger.path, { flags: 'a+' }) }) : null;
-            if (logserver && !typeof logserver === 'string') throw new Error('logserver must be a string');
-            if (logserver && !logserver.startsWith('http')) throw new Error('logserver must be a valid http url');
-            Logger.logserver = logserver;
-            if (logservertoken && !typeof logservertoken === 'string') throw new Error('logservertoken must be a string');
-            Logger.logservertoken = logservertoken;
-            if (appid && !typeof appid === 'string') throw new Error('appid must be a string');
-            Logger.appid = appid;
+            Logger.logPath = logpath ? path.join(this.#getInstPath(), logpath) : null;
+            Logger.fileStream = Logger.logPath ? new Console({ stdout: fs.createWriteStream(Logger.logPath, { flags: 'a+' }), stderr: fs.createWriteStream(Logger.logPath, { flags: 'a+' }) }) : null;
             Logger.info(`Logger module initialized`);
         } else throw new Error('Logger is already initialized');
     }

@@ -6,9 +6,9 @@ module.exports = class AntiCrash {
      * @private
      */
     #start() {
-        process.on('unhandledRejection', (reason, p) => Logger.fatal([reason, p]));
-        process.on('uncaughtException', (err, origin) => Logger.fatal([err, origin]));
-        process.on('uncaughtExceptionMonitor', (err, origin) => Logger.fatal([err, origin]));
+        process.on('unhandledRejection', Logger.error);
+        process.on('uncaughtException', Logger.error);
+        process.on('uncaughtExceptionMonitor', Logger.error);
     }
     /**
      * Initializes the AntiCrash module and errors if it has already been initialized

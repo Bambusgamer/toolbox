@@ -1,135 +1,65 @@
-const express = require('express');
-const axios = require('axios');
+const path = require('path');
+const Logger = require('./logger');
+const Server = require('./Server');
 
+/**
+ * @class Config
+ * @classdesc The Config class is used to store and retrieve configuration data
+ */
 module.exports = class Config {
-    #CONFIGSERVER = null;
-    #APPLICATIONID = null;
-    #NODEID = null;
-    #CONFIGSERVERTOKEN = null;
-    #state = 'loading';
-    #lastConfigKeys = [];
-    #lastPublicKeys = [];
-    #lastEnvKeys = [];
-    static #ready = false;
-    static App = null;
-    static config = {};
-    static public = {};
-    static _env = {};
+    static called = false;
+    static configPath = null;
+    static config = null;
+
     /**
-     * Loads the configuration from the config server
-     * @private
-     * @return {Promise<void>}
+     * Returns the path from where the Handler was called
+     * @return {string} path of the instance
      */
-    async #loadConfiguration() {
-        const Logger = require('./logger');
-        if (!this.#testConnection()) throw new Error('Config server connection failed');
-        await Promise.all([
-            axios.get(`${this.#CONFIGSERVER}/config/${this.#APPLICATIONID}`, {
-                headers: { token: this.#CONFIGSERVERTOKEN },
-            }),
-            axios.get(`${this.#CONFIGSERVER}/public/${this.#APPLICATIONID}`, {
-                headers: { token: this.#CONFIGSERVERTOKEN },
-            }),
-            axios.get(`${this.#CONFIGSERVER}/env/${this.#APPLICATIONID}`, {
-                headers: { token: this.#CONFIGSERVERTOKEN },
-            })])
-            .then((res) => {
-                if (!res[0]?.data ||
-                    !res[1]?.data ||
-                    !res[2]?.data) return Logger.warn(`No configuration found on server ${this.#CONFIGSERVER}`);
-                for (const key in this.#lastConfigKeys) {
-                    delete this[key]; delete Config.config[key];
-                }
-                for (const key in this.#lastPublicKeys) {
-                    delete this.public[key]; delete Config.public[key];
-                }
-                for (const key in this.#lastEnvKeys) {
-                    delete this._env[key]; delete Config._env[key];
-                }
-                for (const [key, value] of Object.entries(res[0].data)) {
-                    this.#lastConfigKeys.push(key);
-                    this[key] = value;
-                    Config.config[key] = value;
-                }
-                for (const [key, value] of Object.entries(res[1].data)) {
-                    this.#lastPublicKeys.push(key);
-                    this.public[key] = value;
-                    Config.public[key] = value;
-                }
-                for (const [key, value] of Object.entries(res[2].data)) {
-                    this.#lastEnvKeys.push(key);
-                    this._env[key] = value;
-                    Config._env[key] = value;
-                }
-                this.#state = 'loaded';
-            });
+    #getInstPath() {
+        const stack = new Error().stack;
+        const frame = stack.split('\n')[3].trim();
+        // Credits to discord@A7mooz#2962 for the regex
+        const regex = /([A-Z]:)?((\/|\\)(\w\.?)+)+\3/g;
+        const path = regex.exec(frame)[0].replace(/\\/g, '/');
+        return path;
     }
+
     /**
-     * Creates the main api route for and exposes it to attach other routes
-     * @return {void} Returns nothing
+     * Reloads the config file
+     * @return {object} Returns the config object
      */
-    #startServer() {
-        const Logger = require('./logger');
-        if (this.#state != 'loaded') return;
-        const app = express();
-        app.post('/Config/reload', (req, res) => {
-            this.#loadConfiguration().then(() => {
-                res.sendStatus(200);
-            });
-        });
-        app.start = () => {
-            app.listen(this.public.api[this.#NODEID], () => {
-                Logger.infog(`API port: ${this.public.api[this.#NODEID]}`);
-            });
-        };
-        Config.App = app;
-    }
-    /**
-     * Tests if a connection to the config server can be established
-     * Doesn't return a promise
-     * @return {boolean} Returns true if the connection was successful
-     */
-    #testConnection() {
-        const Logger = require('./logger');
-        return axios.get(`${this.#CONFIGSERVER}/test`, {
-            headers: { token: this.#CONFIGSERVERTOKEN },
-        }).then((res) => {
-            if (res.data == 'OK') {
-                return true;
-            }
-            Logger.warn('Connection to config server failed');
+    static reload() {
+        const old = Config.config;
+        try {
+            delete require.cache[require.resolve(Config.configPath)];
+            Config.config = require(Config.configPath);
+            Logger.info('Loaded config');
+            return Config.config;
+        } catch (e) {
+            Config.config = old;
+            Logger.error('Failed to load config');
             return false;
-        }).catch(() => {
-            Logger.warn('Connection to config server failed');
-            return false;
-        });
+        }
     }
+
     /**
-     * Initializes the config server connection data
-     * @param {object} obj Connection details
-     * @param {string} obj.server The config server url
-     * @param {string} obj.token The token to access the config server
-     * @param {string} obj.app The application id
-     * @param {string} obj.node The node id
+     * Initializes the config
+     * @constructor
+     * @param {string} configPath The path of the config relative to from where the constructor is called
+     * @return {object} Returns the config object
      */
-    constructor({ server, token, app, node }) {
-        const Logger = require('./logger.js');
-        if (!server || !token || !app || !node) throw new Error('Invalid config server data');
-        this.#CONFIGSERVER = server;
-        this.#CONFIGSERVERTOKEN = token;
-        this.#APPLICATIONID = app;
-        this.#NODEID = node;
-        this.public = {};
-        this._env = {};
-        Config.#ready = this.#testConnection();
-        Logger.info(`Config module initialized`);
-    }
-    /**
-     * Starts the config server and loads the configuration to make it staticly available
-     */
-    async load() {
-        if (!Config.#ready) throw new Error('Config module not ready');
-        await this.#loadConfiguration();
-        this.#startServer();
+    constructor(configPath) {
+        if (!configPath || typeof configPath !== 'string') throw new Error('Invalid config path');
+        if (!Config.called) {
+            Config.configPath = path.join(this.#getInstPath(), configPath);
+            Config.called = true;
+            if (Server.app) {
+                Server.app.post('/Config/reload', (req, res) => {
+                    const success = this.reload();
+                    res.sendStatus(success ? 200 : 500);
+                });
+            };
+            return this.reload();
+        } else throw new Error('Config is already initialized');
     }
 };
