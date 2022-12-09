@@ -10,6 +10,7 @@ const {
     Client,
 } = require('discord.js');
 const Logger = require('./logger');
+const Server = require('./server');
 const statics = require('../util/statics');
 const CommandBuilder = require('../classes/command');
 const EventBuilder = require('../classes/event');
@@ -124,31 +125,33 @@ module.exports = class Handler extends EventEmitter {
                 }
             });
         }
-        for (const emitter of this.#customEmitters) {
-            for (const event of emitter.events) {
-                emitter.emitter.on(event, (...args) => {
-                    this.emit(emitter.name, event, ...args);
-                    if (this.events.has(event)) {
-                        const listeners = this.events.get(event);
-                        for (const listener of listeners) {
-                            if (listener?.emitter === emitter.name) {
-                                try {
-                                    listener.callback(...args);
-                                } catch (err) {
-                                    Logger.error(err);
-                                }
+        if (this.#customEmitters) {
+            for (const emitter of this.#customEmitters) {
+                for (const event of emitter.events) {
+                    emitter.emitter.on(event, (...args) => {
+                        this.emit(emitter.name, event, ...args);
+                        if (this.events.has(event)) {
+                            const listeners = this.events.get(event);
+                            for (const listener of listeners) {
+                                if (listener?.emitter === emitter.name) {
+                                    try {
+                                        listener.callback(...args);
+                                    } catch (err) {
+                                        Logger.error(err);
+                                    };
+                                };
                             };
-                        }
-                        this.events.set(event, listeners.filter((listener) => {
-                            const once = listener.once;
-                            if (listener?.emitter === emitter.name) {
-                                return !once;
-                            } else return true;
-                        }));
-                    }
-                });
-            }
-        }
+                            this.events.set(event, listeners.filter((listener) => {
+                                const once = listener.once;
+                                if (listener?.emitter === emitter.name) {
+                                    return !once;
+                                } else return true;
+                            }));
+                        };
+                    });
+                };
+            };
+        };
     }
     /**
      * Loads all the events, commands and interactions

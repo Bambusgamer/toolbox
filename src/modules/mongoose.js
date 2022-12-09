@@ -11,7 +11,8 @@ module.exports = class Mongoose {
     #start() {
         const connect = () => mongoose.connect(this.#uri, {
             useUnifiedTopology: true,
-        }).catch((err) => Logger.fatal([err, '']));
+        }).catch(Logger.error);
+        mongoose.set('strictQuery', true);
         mongoose.connection.on('connected', () => Logger.info(`√ Connected to MongoDB!`));
         mongoose.connection.on('disconnected', async () => {
             Logger.warn(`██ Disconnected from MongoDB!`);

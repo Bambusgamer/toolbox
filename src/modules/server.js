@@ -1,4 +1,5 @@
 const express = require('express');
+const Logger = require('./logger');
 
 /**
  * @class Server
@@ -12,9 +13,9 @@ module.exports = class Server {
      * @param {number} port The port to listen on
      */
     static start(port) {
-        const Logger = require('./logger');
+        if (!Server.app) throw new Error('Server is not initialized yet');
         if (!port) throw new Error('No port provided');
-        this.app.listen(port, () => {
+        Server.app.listen(port, () => {
             Logger.infog(`API port: ${port}`);
         }, Logger.error);
     }
@@ -26,9 +27,9 @@ module.exports = class Server {
     constructor() {
         if (!Server.called) {
             const app = express();
-            app.start = this.start;
-            this.app = app;
+            Server.app = app;
             Server.called = true;
+            Logger.info('Server initialized');
             return app;
         } else throw new Error('Server is already initialized');
     }

@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const timestamp = () => `[${moment().format('YYYY-MM-DD HH:mm:ss')}] | `;
-const trace = () => new Error().stack.split('\n').slice(4).join('\n').trim();
+const createTrace = () => new Error().stack.split('\n').slice(4).join('\n').trim();
 const colors = {
     white: chalk.white,
     blue: chalk.blue,
@@ -38,35 +38,38 @@ module.exports = class Logger {
      * @param {string} level The level of the log [LOG, INFO, INFOH, INFOT, WARN, ERROR, FATAL] (default: LOG) wich will be used to color the output
      */
     static console(data, level) {
-        const Config = require('./config.js');
-        const output = Config._env?.toolbox?.trace ? [...data, trace()] : data;
+        let trace = false;
+        if (Logger.called) {
+            const { config } = require('./config');
+            trace = config?.toolbox?.trace ?? false;
+        }
         switch (level) {
             // infoy
             case 1:
-                console.log(colors.yellow(timestamp()), ...output);
+                console.log(colors.yellow(...data), trace ? createTrace() : '');
                 break;
             // infog
             case 2:
-                console.log(colors.green(timestamp()), ...output);
+                console.log(colors.green(timestamp()), ...data, trace ? createTrace() : '');
                 break;
             // infob
             case 3:
-                console.log(colors.blue(timestamp()), ...output);
+                console.log(colors.blue(timestamp()), ...data, trace ? createTrace() : '');
                 break;
             // warn
             case 4:
-                console.log(colors.orange(timestamp()), ...output);
+                console.log(colors.orange(timestamp()), ...data, trace ? createTrace() : '');
                 break;
             // error
             case 5:
-                console.log(colors.red(timestamp()), ...output);
+                console.log(colors.red(timestamp()), ...data, trace ? createTrace() : '');
                 break;
             // newline
             case 6:
-                console.log('');
+                console.log('', trace ? createTrace() : '', trace ? createTrace() : '');
                 break;
             default:
-                console.log(colors.white(timestamp()), ...output);
+                console.log(colors.white(timestamp()), ...data, trace ? createTrace() : '');
                 break;
         }
     }
@@ -74,64 +77,62 @@ module.exports = class Logger {
      * Logs content to a log file if a path was provided
      * @param {*} data Array of Promises or string to log
      */
-    static write(data) {
-        const Config = require('./config');
-        const output = Config._env?.toolbox?.trace ? [...data, trace()] : data;
-        if (Logger.fileStream) Logger.fileStream.log(timestamp(), ...output);
+    static write(...data) {
+        if (Logger.fileStream) Logger.fileStream.log(timestamp(), ...data);
     }
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
      * yellow
      * @param {string} data String to log
      */
-    static infoy(data) {
-        this.console(data, 1);
-        this.write(data);
+    static infoy(...data) {
+        Logger.console(data, 1);
+        Logger.write(data);
     }
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
      * green
      * @param {string} data String to log
      */
-    static infog(data) {
-        this.console(data, 2);
-        this.write(data);
+    static infog(...data) {
+        Logger.console(data, 2);
+        Logger.write(data);
     }
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
      * blue
      * @param {string} data String to log
      */
-    static info(data) {
-        this.console(data, 3);
-        this.write(data);
+    static info(...data) {
+        Logger.console(data, 3);
+        Logger.write(data);
     }
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a warning
      * orange
      * @param {string} data String to log
      */
-    static warn(data) {
-        this.console(data, 4);
-        this.write(data);
+    static warn(...data) {
+        Logger.console(data, 4);
+        Logger.write(data);
     }
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a error
      * red
      * @param {string} data String to log
     */
-    static error(data) {
-        this.console(data, 5);
-        this.write(data);
+    static error(...data) {
+        Logger.console(data, 5);
+        Logger.write(data);
     }
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an default log
      * white
      * @param {string} data String to log
      */
-    static log(data) {
-        this.console(data, null);
-        this.write(data);
+    static log(...data) {
+        Logger.console(data, null);
+        Logger.write(data);
     }
     /**
      * Logs out a new line or multiple new lines
@@ -139,7 +140,7 @@ module.exports = class Logger {
      */
     static newline(lines) {
         for (let i = 0; i < (lines ?? 1); i++) {
-            this.console('', 6);
+            Logger.console('', 6);
         }
     }
     /**

@@ -59,7 +59,7 @@ module.exports = class Config {
                     res.sendStatus(success ? 200 : 500);
                 });
             };
-            return this.reload();
+            return Config.reload();
         } else throw new Error('Config is already initialized');
     }
 };
