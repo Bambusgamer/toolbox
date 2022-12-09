@@ -77,7 +77,7 @@ module.exports = class Logger {
      * Logs content to a log file if a path was provided
      * @param {*} data Array of Promises or string to log
      */
-    static write(...data) {
+    static write(data) {
         if (Logger.fileStream) Logger.fileStream.log(timestamp(), ...data);
     }
     /**
