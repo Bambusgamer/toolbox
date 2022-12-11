@@ -9,5 +9,4 @@ exports.CommandBuilder = require('./classes/command');
 exports.EventBuilder = require('./classes/event');
 exports.InteractionBuilder = require('./classes/interaction');
 exports.builders = require('./util/builders');
-exports.Util = require('./util/util');
 exports.Languages = require('./util/statics').supportedDiscordLanguages;

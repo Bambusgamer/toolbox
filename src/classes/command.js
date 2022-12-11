@@ -2,32 +2,18 @@
 /* eslint-disable no-unused-vars */
 const {
     Client,
-    Message,
     SlashCommandBuilder,
     PermissionFlagsBits,
-    CommandInteraction,
 } = require('discord.js');
 const Logger = require('../modules/logger');
 const Config = require('../modules/config');
 const Localizer = require('../modules/localizer');
-const {
-    ActionRow,
-    Embed,
-    Button,
-    SelectMenu,
-    TextInput,
-    Modal,
-} = require('../util/builders');
+const builders = require('../util/builders');
 const modules = {
     Logger,
     Localizer,
     Config,
-    ActionRow,
-    Embed,
-    Button,
-    SelectMenu,
-    TextInput,
-    Modal,
+    ...builders,
     perms: PermissionFlagsBits,
 };
 

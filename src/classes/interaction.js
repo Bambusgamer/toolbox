@@ -1,26 +1,19 @@
-// eslint-disable-next-line no-unused-vars
-const { Client, Interaction } = require('discord.js');
+/* eslint-disable no-unused-vars */
+const {
+    Client,
+    Interaction,
+    PermissionFlagsBits,
+} = require('discord.js');
 const Logger = require('../modules/logger');
 const Config = require('../modules/config');
 const Localizer = require('../modules/localizer');
-const {
-    ActionRow,
-    Embed,
-    Button,
-    SelectMenu,
-    TextInput,
-    Modal,
-} = require('../util/builders');
+const builders = require('../util/builders');
 const modules = {
     Logger,
     Config,
     Localizer,
-    ActionRow,
-    Embed,
-    Button,
-    SelectMenu,
-    TextInput,
-    Modal,
+    ...builders,
+    perms: PermissionFlagsBits,
 };
 
 /**

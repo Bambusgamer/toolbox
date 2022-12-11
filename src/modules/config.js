@@ -49,15 +49,16 @@ module.exports = class Config {
      * @return {object} Returns the config object
      */
     constructor(configPath) {
-        if (!configPath || typeof configPath !== 'string') throw new Error('Invalid config path');
         if (!Config.called) {
-            Config.configPath = path.join(this.#getInstPath(), configPath);
             Config.called = true;
-            if (Server.app) {
+            if (!configPath || typeof configPath !== 'string') throw new Error('Invalid config path');
+            Config.configPath = path.join(this.#getInstPath(), configPath);
+            if (Server.app && Server.app.listen && typeof Server.app.listen === 'function') {
                 Server.app.post('/Config/reload', (req, res) => {
                     const success = Config.reload();
                     res.sendStatus(success ? 200 : 500);
                 });
+                Logger.info('Config API initialized');
             };
             return Config.reload();
         } else throw new Error('Config is already initialized');

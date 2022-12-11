@@ -10,6 +10,7 @@ module.exports = class Localizer {
         languages: {},
         strings: {},
     };
+    static called = false;
     /**
      * Returns the path from where the Handler was called
      * @return {string} path of the instance
@@ -43,16 +44,21 @@ module.exports = class Localizer {
      * @param {string} languagePackPath The path of the config relative to from where the constructor is called
      */
     constructor(languagePackPath) {
-        if (!languagePackPath || typeof languagePackPath !== 'string') throw new Error('Invalid config path');
-        const instance = this.#getInstPath();
-        this.#languagePackPath = path.join(instance, languagePackPath);
-        if (Server.app) {
-            Server.app.post('/Localizer/reload', (req, res) => {
-                const success = this.#reload();
-                res.sendStatus(success ? 200 : 500);
-            });
-        }
-        this.#reload();
+        if (!Localizer.called) {
+            Localizer.called = true;
+            if (!languagePackPath || typeof languagePackPath !== 'string') throw new Error('Invalid config path');
+            const instance = this.#getInstPath();
+            this.#languagePackPath = path.join(instance, languagePackPath);
+            if (Server.app && Server.app.listen && typeof Server.app.listen === 'function') {
+                Server.app.post('/Localizer/reload', (req, res) => {
+                    Logger.info(`Reloading Localizer from ${req.ip}`);
+                    const success = this.#reload();
+                    res.sendStatus(success ? 200 : 500);
+                });
+            }
+            Logger.info('Handler module initialized');
+            this.#reload();
+        } else throw new Error('Localizer already initialized');
     }
     /**
      * Sets the language pack and validates it

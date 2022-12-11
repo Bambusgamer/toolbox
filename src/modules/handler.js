@@ -76,9 +76,9 @@ module.exports = class Handler extends EventEmitter {
         this.BetaSlashCommands = new Collection();
         this.textCommands = new Collection();
         this.interactions = new Collection();
-        if (Server.app) {
+        if (Server.app && Server.app.listen && typeof Server.app.listen === 'function') {
             Server.app.post('/Handler/reload', (req, res) => {
-                Logger.info(`Reloading handler from ${req.ip}`);
+                Logger.info(`Reloading Handler from ${req.ip}`);
                 const success = this.reload();
                 res.sendStatus(success ? 200 : 500);
             });

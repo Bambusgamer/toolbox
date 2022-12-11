@@ -14,6 +14,7 @@ module.exports = class Server {
      */
     static start(port) {
         if (!Server.app) throw new Error('Server is not initialized yet');
+        if (!Server.listen || typeof Server.listen !== 'function') throw new Error('No valid express app available');
         if (!port) throw new Error('No port provided');
         Server.app.listen(port, () => {
             Logger.infog(`API port: ${port}`);
@@ -26,9 +27,9 @@ module.exports = class Server {
      */
     constructor() {
         if (!Server.called) {
+            Server.called = true;
             const app = express();
             Server.app = app;
-            Server.called = true;
             Logger.info('Server initialized');
             return app;
         } else throw new Error('Server is already initialized');
