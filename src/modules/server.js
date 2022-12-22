@@ -29,6 +29,7 @@ module.exports = class Server {
         if (!Server.called) {
             Server.called = true;
             const app = express();
+            app.use(express.json());
             Server.app = app;
             Logger.info('Server initialized');
             return app;
