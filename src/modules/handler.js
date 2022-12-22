@@ -73,7 +73,7 @@ module.exports = class Handler extends EventEmitter {
         if (customEmitters) this.#customEmitters = customEmitters;
         this.events = new Collection();
         this.slashCommands = new Collection();
-        this.BetaSlashCommands = new Collection();
+        this.betaSlashCommands = new Collection();
         this.textCommands = new Collection();
         this.interactions = new Collection();
         if (Server.app && Server.app.listen && typeof Server.app.listen === 'function') {
@@ -157,7 +157,7 @@ module.exports = class Handler extends EventEmitter {
      * Loads all the events, commands and interactions
      * @return {boolean} Success of the operation
      */
-    async load() {
+    load() {
         let success = false;
         if (this.#commandsPath) {
             Logger.infoy('\nCommands:');
@@ -187,14 +187,14 @@ module.exports = class Handler extends EventEmitter {
         this.#oldstate = {
             events: this.events.clone(),
             slashCommands: this.slashCommands.clone(),
-            BetaSlashCommands: this.BetaSlashCommands.clone(),
+            BetaSlashCommands: this.betaSlashCommands.clone(),
             textCommands: this.textCommands.clone(),
             interactions: this.interactions.clone(),
         };
         this.events.clear();
         this.interactions.clear();
         this.slashCommands.clear();
-        this.BetaSlashCommands.clear();
+        this.betaSlashCommands.clear();
         this.textCommands.clear();
     }
     /**
@@ -214,7 +214,7 @@ module.exports = class Handler extends EventEmitter {
             this.events = this.#oldstate.events;
             this.interactions = this.#oldstate.interactions;
             this.slashCommands = this.#oldstate.slashCommands;
-            this.BetaSlashCommands = this.#oldstate.BetaSlashCommands;
+            this.betaSlashCommands = this.#oldstate.BetaSlashCommands;
             this.textCommands = this.#oldstate.textCommands;
             Logger.infoy('Restored old state');
         }
@@ -324,7 +324,7 @@ module.exports = class Handler extends EventEmitter {
                     this.slashCommands.set(command.customId, command.slash);
                 };
                 if (command.hasBetaSlash) {
-                    this.BetaSlashCommands.set(command.betaCustomId, command.betaSlash);
+                    this.betaSlashCommands.set(command.betaCustomId, command.betaSlash);
                 };
                 if (command.hasText) {
                     this.textCommands.set(command.name, command.text);
@@ -386,15 +386,15 @@ module.exports = class Handler extends EventEmitter {
             if (!this.#ready()) return (Logger.error('Client and rest not ready') && false);
             const body = [];
             if (commands === null) {
-                this.BetaSlashCommands.forEach((command) => {
+                this.betaSlashCommands.forEach((command) => {
                     body.push(command.data);
                 });
             } else if (typeof commands === 'array') {
-                this.BetaSlashCommands.forEach((command) => {
+                this.betaSlashCommands.forEach((command) => {
                     if (commands.includes(command.data.name)) body.push(command.data);
                 });
             } else if (typeof commands === 'string') {
-                this.BetaSlashCommands.forEach((command) => {
+                this.betaSlashCommands.forEach((command) => {
                     if (commands === command.data.name) body.push(command.data);
                 });
             } else {
