@@ -1,7 +1,5 @@
 # Toolbox
 
-[TOC]
-
 # Package
 
 ## Content
@@ -10,7 +8,7 @@
 
 #### CommandBuilder
 
-```
+```JS
 const { CommandBuilder } = require('@bambusgamer/toolbox');
 
 module.exports = new CommandBuilder({
