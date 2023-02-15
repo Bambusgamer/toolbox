@@ -20,6 +20,7 @@ module.exports = class Logger {
     static called = false;
     static logPath = null;
     static fileStream = null;
+
     /**
      * Returns the path from where the Handler was called
      * @return {string} path of the instance
@@ -32,6 +33,7 @@ module.exports = class Logger {
         const path = regex.exec(frame)[0];
         return path;
     }
+
     /**
      * Logs content to the console
      * @param {*} data Array of Promises or string to log
@@ -73,6 +75,7 @@ module.exports = class Logger {
                 break;
         }
     }
+
     /**
      * Logs content to a log file if a path was provided
      * @param {*} data Array of Promises or string to log
@@ -80,6 +83,7 @@ module.exports = class Logger {
     static write(data) {
         if (Logger.fileStream) Logger.fileStream.log(timestamp(), ...data);
     }
+
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
      * yellow
@@ -89,6 +93,7 @@ module.exports = class Logger {
         Logger.console(data, 1);
         Logger.write(data);
     }
+
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
      * green
@@ -98,6 +103,7 @@ module.exports = class Logger {
         Logger.console(data, 2);
         Logger.write(data);
     }
+
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an info
      * blue
@@ -107,6 +113,7 @@ module.exports = class Logger {
         Logger.console(data, 3);
         Logger.write(data);
     }
+
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a warning
      * orange
@@ -116,6 +123,7 @@ module.exports = class Logger {
         Logger.console(data, 4);
         Logger.write(data);
     }
+
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as a error
      * red
@@ -125,6 +133,7 @@ module.exports = class Logger {
         Logger.console(data, 5);
         Logger.write(data);
     }
+
     /**
      * Logs content to the console and optionally if a path was provided to a log file and if a server was provided to a log server as an default log
      * white
@@ -134,6 +143,7 @@ module.exports = class Logger {
         Logger.console(data, null);
         Logger.write(data);
     }
+
     /**
      * Logs out a new line or multiple new lines
      * @param {number} lines Number of new lines to log out
@@ -143,6 +153,7 @@ module.exports = class Logger {
             Logger.console('', 6);
         }
     }
+
     /**
      * Initializes the logger
      * @constructor

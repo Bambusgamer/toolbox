@@ -11,6 +11,7 @@ module.exports = class Localizer {
         strings: {},
     };
     static called = false;
+
     /**
      * Returns the path from where the Handler was called
      * @return {string} path of the instance
@@ -23,6 +24,7 @@ module.exports = class Localizer {
         const path = regex.exec(frame)[0];
         return path;
     }
+
     /**
      * Loads the language pack
      * @return {object} Returns the language pack
@@ -39,6 +41,7 @@ module.exports = class Localizer {
             return false;
         }
     }
+
     /**
      * Creates a new Localizer
      * @param {string} languagePackPath The path of the config relative to from where the constructor is called
@@ -60,6 +63,7 @@ module.exports = class Localizer {
             this.#reload();
         } else throw new Error('Localizer already initialized');
     }
+
     /**
      * Sets the language pack and validates it
      * @param {object} pack The language pack
@@ -88,6 +92,7 @@ module.exports = class Localizer {
         Localizer.languagePack.strings = pack.strings;
         return true;
     }
+
     /**
      * Returns a string from the language pack and replaces the placeholders
      * @param {string} language The language
@@ -106,6 +111,7 @@ module.exports = class Localizer {
         };
         return string;
     }
+
     /**
      * Returns a string from the language pack in its default language and replaces the placeholders
      * @param {string} key The key of the string
@@ -116,6 +122,7 @@ module.exports = class Localizer {
         if (Localizer.languagePack.defaultLanguage) return Localizer.get(Localizer.languagePack.defaultLanguage, key, ...placeholders);
         else return Localizer.get('en-US', key, ...placeholders);
     }
+
     /**
      * Returns all possible strings and replaces the placeholders
      * @param {string} key The key of the string
