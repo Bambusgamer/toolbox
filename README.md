@@ -45,7 +45,7 @@ module.exports = new CommandBuilder({
 
 #### EventBuilder
 
-```
+```JS
 const { EventBuilder } = require('@bambusgamer/toolbox');
 
 module.exports = new EventBuilder({
@@ -59,7 +59,7 @@ module.exports = new EventBuilder({
 
 #### InteractionBuilder
 
-```
+```JS
 const { InteractionBuilder } = require('@bambusgamer/toolbox');
 
 module.exports = new InteractionBuilder({
@@ -73,7 +73,7 @@ module.exports = new InteractionBuilder({
 
 #### AntiCrash
 
-```
+```JS
 const { Anticrash } = require('@bambusgamer/toolbox');
 
 Anticrash.init();
@@ -83,7 +83,7 @@ Anticrash.init();
 
 Loads a .js or .json file
 
-```
+```JS
 const { Config } = require('@bambusgamer/toolbox');
 
 const config = new Config('');
@@ -94,7 +94,7 @@ config.reload();
 
 #### Handler
 
-```
+```JS
 const { Handler } = require('@bambusgamer/toolbox');
 
 const handler = new Handler({
@@ -119,7 +119,7 @@ handler.deleteSlash('', '')
 
 #### Localizer
 
-```
+```JS
 const { Localizer } = require('@bambusgamer/toolbox');
 
 const localizer = new Localizer('');
@@ -134,13 +134,13 @@ localizer.get('en-US', 'key', ...placeholders);
 
 **Localizationpack:**
 
-```
+```JS
 module.exports = {
     defaultLanguage: 'en-US',
     languages: ['en-US'],
     strings: {
         'en-US': {
-			'key': 'value {{1}}',
+		'key': 'value {{1}}',
         },
     },
 };
@@ -148,7 +148,7 @@ module.exports = {
 
 #### Logger
 
-```
+```JS
 const { Logger } = require('@bambusgamer/toolbox');
 
 new Logger('');
@@ -156,7 +156,7 @@ new Logger('');
 
 #### Mongoose
 
-```
+```JS
 const { Mongoose } = require('@bambusgamer/toolbox');
 
 Mongoose.init('');
@@ -166,7 +166,7 @@ Mongoose.init('');
 
 ## Message structure
 
-```
+```JS
 {
   "reactions": [
     {
@@ -212,7 +212,7 @@ Mongoose.init('');
 
 **Localization:**
 
-```
+```JS
 {
 	"locale": "localized"
 }
@@ -234,14 +234,14 @@ Mongoose.init('');
 
 **Example:**
 
-```
+```JS
 {
 	type: 1,
 	name: "command",
 	name_localizations: {"de-DE": "befehl"},
 	description: "Does stuff",
 	description_localizations: {"de-DE": "Macht Dinge"},
-    options: [
+    	options: [
         {
             type: 2,
             name: "subcommandGroup",
@@ -372,7 +372,7 @@ Mongoose.init('');
 
 **Button emojis:**
 
-```
+```JS
 {
     name: "emoji",
     id: "emoji_id",
@@ -382,7 +382,7 @@ Mongoose.init('');
 
 **Example:**
 
-```
+```JS
 [
     {
         type: 1,
@@ -463,7 +463,7 @@ Mongoose.init('');
 
 **Example:**
 
-```
+```JS
 {
     title: "Modal",
     title_localizations: {"de-DE": "Modal"},
