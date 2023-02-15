@@ -17,11 +17,11 @@ module.exports = class Localizer {
      */
     #getInstPath() {
         const stack = new Error().stack;
-        const frame = stack.split('\n')[3].trim();
+        const frame = stack.split('\n')[3].trim().replace(/\\/g, '/');
         // Credits to discord@A7mooz#2962 for the regex
-        const regex = /([A-Z]:)?((\/|\\)(\w\.?)+)+\3/g;
-        const instancePath = regex.exec(frame)[0].replace(/\\/g, '/');
-        return instancePath;
+        const regex = /([A-Z]:)?((\/)([a-zA-Z0-9_ ]\.?)+)+\3/g;
+        const path = regex.exec(frame)[0];
+        return path;
     }
     /**
      * Loads the language pack
