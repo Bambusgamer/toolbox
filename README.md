@@ -38,7 +38,7 @@ module.exports = new CommandBuilder({
             example: [],
             dm_permission: false,
         }),
-		async callback(client, modules, message) {},
+	async callback(client, modules, message) {},
     },
 })
 ```
@@ -51,9 +51,9 @@ const { EventBuilder } = require('@bambusgamer/toolbox');
 module.exports = new EventBuilder({
     name: 'ready',
     once: true,
-	listener: '',
+    listener: '',
     async callback(client, modules) { },
-	...keys,
+    ...keys,
 });
 ```
 
@@ -65,7 +65,7 @@ const { InteractionBuilder } = require('@bambusgamer/toolbox');
 module.exports = new InteractionBuilder({
     customId: '',
     async callback(client, modules, interaction) { },
-	...keys,
+    ...keys,
 });
 ```
 
