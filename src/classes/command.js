@@ -1,21 +1,6 @@
 /* eslint-disable max-len */
 /* eslint-disable no-unused-vars */
-const {
-    Client,
-    SlashCommandBuilder,
-    PermissionFlagsBits,
-} = require('discord.js');
-const Logger = require('../modules/logger');
-const Config = require('../modules/config');
-const Localizer = require('../modules/localizer');
-const builders = require('../util/builders');
-const modules = {
-    Logger,
-    Localizer,
-    Config,
-    ...builders,
-    perms: PermissionFlagsBits,
-};
+const { Client } = require('discord.js');
 
 
 /**
@@ -24,7 +9,6 @@ const modules = {
  * @class
  */
 class CommandBuilder {
-    static modules = modules;
     /**
      * Checks if a slash command is present
      * @return {boolean}
@@ -53,14 +37,6 @@ class CommandBuilder {
      * @param {object} obj.slash The slash command data
      * @param {object} obj.betaSlash The beta slash command data
      * @param {object} obj.text The text command data
-     * @param {function} obj.slash.data The slash command builder
-     * @param {function} obj.slash.autocomplete The slash command autocomplete callback
-     * @param {function} obj.slash.callback The slash command callback
-     * @param {function} obj.betaSlash.data The beta slash command builder
-     * @param {function} obj.betaSlash.autocomplete The beta slash command autocomplete callback
-     * @param {function} obj.betaSlash.callback The beta slash command callback
-     * @param {function} obj.text.data The text command builder
-     * @param {function} obj.text.callback The text command callback
      */
     constructor({ slash = null, betaSlash = null, text = null }) {
         if (slash && typeof slash !== 'object') throw new Error('Invalid slash command data');
@@ -83,24 +59,25 @@ class CommandBuilder {
      * Hydrates the slash command builder
      * Must be called before the command is registered
      * @param {Client} client The client
+     * @param {object} modules The modules to pass to the command
      * @return {void}
      */
-    hydrate(client) {
+    hydrate(client, modules) {
         if (!client) throw new Error('Client is required to hydrate command');
         if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
         if (this.hasSlash) {
-            this.slash.data = this.slash.data(new SlashCommandBuilder(), client, CommandBuilder.modules);
-            if (this.slash.autocomplete) this.slash.autocomplete = this.slash.autocomplete.bind(null, client, CommandBuilder.modules);
-            this.slash.callback = this.slash.callback.bind(null, client, CommandBuilder.modules);
+            this.slash.data = this.slash.data(client, modules);
+            if (this.slash.autocomplete) this.slash.autocomplete = this.slash.autocomplete.bind(null, client, modules);
+            this.slash.callback = this.slash.callback.bind(null, client, modules);
         }
         if (this.hasBetaSlash) {
-            this.betaSlash.data = this.betaSlash.data(new SlashCommandBuilder(), client, CommandBuilder.modules);
-            if (this.betaSlash.autocomplete) this.betaSlash.autocomplete = this.betaSlash.autocomplete.bind(null, client, CommandBuilder.modules);
-            this.betaSlash.callback = this.betaSlash.callback.bind(null, client, CommandBuilder.modules);
+            this.betaSlash.data = this.betaSlash.data(client, modules);
+            if (this.betaSlash.autocomplete) this.betaSlash.autocomplete = this.betaSlash.autocomplete.bind(null, client, modules);
+            this.betaSlash.callback = this.betaSlash.callback.bind(null, client, modules);
         }
         if (this.hasText) {
-            this.text.data = this.text.data(client, CommandBuilder.modules);
-            this.text.callback = this.text.callback.bind(null, client, CommandBuilder.modules);
+            this.text.data = this.text.data(client, modules);
+            this.text.callback = this.text.callback.bind(null, client, modules);
         }
     }
 

@@ -1,26 +1,10 @@
 /* eslint-disable no-unused-vars */
-const {
-    Client,
-    Interaction,
-    PermissionFlagsBits,
-} = require('discord.js');
-const Logger = require('../modules/logger');
-const Config = require('../modules/config');
-const Localizer = require('../modules/localizer');
-const builders = require('../util/builders');
-const modules = {
-    Logger,
-    Config,
-    Localizer,
-    ...builders,
-    perms: PermissionFlagsBits,
-};
+const { Client, Interaction } = require('discord.js');
 
 /**
  * The base class for all interactions
  */
 class InteractionBuilder {
-    static modules = modules;
     /**
      * Creates a new Interaction
      * @param {object} obj The interaction
@@ -42,11 +26,13 @@ class InteractionBuilder {
     /**
      * Hydrates the interaction
      * @param {Client} client The client
+     * @param {object} modules The modules
+     * @return {void}
      */
-    hydrate(client) {
+    hydrate(client, modules) {
         if (!client) throw new Error('Client is required to hydrate command');
         if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
-        this.callback = this.callback.bind(null, client, InteractionBuilder.modules);
+        this.callback = this.callback.bind(null, client, modules);
     }
 
     /**

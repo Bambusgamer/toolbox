@@ -1,10 +1,12 @@
 const Logger = require('./logger');
+
 module.exports = class AntiCrash {
     static called = false;
+
     /**
      * Initializes the AntiCrash module and errors if it has already been initialized
      */
-    init() {
+    static init() {
         if (!AntiCrash.called) {
             AntiCrash.called = true;
             process.on('unhandledRejection', Logger.error);

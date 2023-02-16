@@ -1,16 +1,14 @@
 const path = require('path');
 const statics = require('../util/statics');
 const Logger = require('./logger');
-const Server = require('./server');
 
 module.exports = class Localizer {
     #languagePackPath = null;
-    static languagePack = {
+    #languagePack = {
         defaultLanguage: null,
         languages: {},
         strings: {},
     };
-    static called = false;
 
     /**
      * Returns the path from where the Handler was called
@@ -29,14 +27,14 @@ module.exports = class Localizer {
      * Loads the language pack
      * @return {object} Returns the language pack
      */
-    #reload() {
-        const old = Localizer.languagePack;
+    reload() {
+        const old = this.#languagePack;
         try {
             delete require.cache[require.resolve(this.#languagePackPath)];
             this.#setLanguagePack(require(this.#languagePackPath));
             return true;
         } catch (e) {
-            Localizer.languagePack = old;
+            this.#languagePack = old;
             Logger.error('Failed to load language pack');
             return false;
         }
@@ -47,21 +45,10 @@ module.exports = class Localizer {
      * @param {string} languagePackPath The path of the config relative to from where the constructor is called
      */
     constructor(languagePackPath) {
-        if (!Localizer.called) {
-            Localizer.called = true;
-            if (!languagePackPath || typeof languagePackPath !== 'string') throw new Error('Invalid config path');
-            const instance = this.#getInstPath();
-            this.#languagePackPath = path.join(instance, languagePackPath);
-            if (Server.app && Server.app.listen && typeof Server.app.listen === 'function') {
-                Server.app.post('/Localizer/reload', (req, res) => {
-                    Logger.info(`Reloading Localizer from ${req.ip}`);
-                    const success = this.#reload();
-                    res.sendStatus(success ? 200 : 500);
-                });
-            }
-            Logger.info('Handler module initialized');
-            this.#reload();
-        } else throw new Error('Localizer already initialized');
+        if (!languagePackPath || typeof languagePackPath !== 'string') throw new Error('languagePackPath must be of type string');
+        this.#languagePackPath = path.join(this.#getInstPath(), languagePackPath);
+        Logger.info('Localizer initialized');
+        this.reload();
     }
 
     /**
@@ -85,11 +72,11 @@ module.exports = class Localizer {
             };
         };
         for (const language of statics.supportedDiscordLanguages) {
-            if (!pack.languages.includes(language)) Localizer.languagePack.languages[language] = pack.defaultLanguage;
-            else Localizer.languagePack.languages[language] = language;
+            if (!pack.languages.includes(language)) this.#languagePack.languages[language] = pack.defaultLanguage;
+            else this.#languagePack.languages[language] = language;
         };
-        Localizer.languagePack.defaultLanguage = pack.defaultLanguage;
-        Localizer.languagePack.strings = pack.strings;
+        this.#languagePack.defaultLanguage = pack.defaultLanguage;
+        this.#languagePack.strings = pack.strings;
         return true;
     }
 
@@ -103,9 +90,9 @@ module.exports = class Localizer {
     static get(language, key, ...placeholders) {
         if (!language || typeof language !== 'string') throw new Error(`Invalid language ${language}`);
         if (!key || typeof key !== 'string') throw new Error(`Invalid key ${key}`);
-        if (!Localizer.languagePack.languages[language]) throw new Error(`Language ${language} is not supported`);
-        if (!Localizer.languagePack.strings[Localizer.languagePack.languages[language]][key]) throw new Error(`Key ${key} does not exist in language ${Localizer.languagePack.languages[language]}`);
-        let string = Localizer.languagePack.strings[Localizer.languagePack.languages[language]][key];
+        if (!this.#languagePack.languages[language]) throw new Error(`Language ${language} is not supported`);
+        if (!this.#languagePack.strings[this.#languagePack.languages[language]][key]) throw new Error(`Key ${key} does not exist in language ${this.#languagePack.languages[language]}`);
+        let string = this.#languagePack.strings[this.#languagePack.languages[language]][key];
         for (let i = 0; i < placeholders.length; i++) {
             string = string.replace(`{{${i + 1}}}`, placeholders[i]);
         };
@@ -119,8 +106,7 @@ module.exports = class Localizer {
      * @return {string} The string
      */
     static getDefault(key, ...placeholders) {
-        if (Localizer.languagePack.defaultLanguage) return Localizer.get(Localizer.languagePack.defaultLanguage, key, ...placeholders);
-        else return Localizer.get('en-US', key, ...placeholders);
+        return Localizer.get(this.#languagePack.defaultLanguage, key, ...placeholders);
     }
 
     /**
@@ -132,7 +118,7 @@ module.exports = class Localizer {
     static getAll(key, ...placeholders) {
         if (!key || typeof key !== 'string') throw new Error(`Invalid key ${key}`);
         const strings = {};
-        for (const [peerLanguage, language] of Object.entries(Localizer.languagePack.languages)) {
+        for (const [peerLanguage, language] of Object.entries(this.#languagePack.languages)) {
             if (peerLanguage !== language) continue;
             strings[peerLanguage] = this.get(language, key, ...placeholders);
         }

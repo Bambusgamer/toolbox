@@ -8,6 +8,7 @@ const {
     Collection,
     Routes,
     Client,
+    Events,
 } = require('discord.js');
 const Logger = require('./logger');
 const Server = require('./server');
@@ -23,6 +24,7 @@ module.exports = class Handler extends EventEmitter {
     #eventsPath = null;
     #commandsPath = null;
     #interactionsPath = null;
+    #hydrationModules = null;
     #customEmitters = null;
     #oldstate = null;
     /**
@@ -54,10 +56,11 @@ module.exports = class Handler extends EventEmitter {
      * @param {string} obj.paths.events The path to the events folder
      * @param {string} obj.paths.commands The path to the commands folder
      * @param {string} obj.paths.interactions The path to the interactions folder
+     * @param {object} obj.hydrationModules The modules to hydrate
      * @param {string} obj.restToken The token to use for the rest client
      * @param {array} obj.customEmitters The custom emitters to listen to
      */
-    constructor({ client, paths, restToken, customEmitters }) {
+    constructor({ client, paths, hydrationModules, restToken, customEmitters }) {
         super();
         const { events, commands, interactions } = paths;
         this.#client = client;
@@ -69,21 +72,18 @@ module.exports = class Handler extends EventEmitter {
         if (commands) this.#commandsPath = path.join(this.#getInstPath(), commands);
         if (interactions && typeof interactions !== 'string') throw new Error('Interactions path must be a string');
         if (interactions) this.#interactionsPath = path.join(this.#getInstPath(), interactions);
+        if (hydrationModules && typeof hydrationModules !== 'object') throw new Error('Hydration modules must be an object');
         if (customEmitters && !Array.isArray(customEmitters)) throw new Error('Custom emitters must be an array');
         if (customEmitters) this.#customEmitters = customEmitters;
+
         this.events = new Collection();
         this.slashCommands = new Collection();
         this.betaSlashCommands = new Collection();
         this.textCommands = new Collection();
         this.interactions = new Collection();
-        if (Server.app && Server.app.listen && typeof Server.app.listen === 'function') {
-            Server.app.post('/Handler/reload', (req, res) => {
-                Logger.info(`Reloading Handler from ${req.ip}`);
-                const success = this.reload();
-                res.sendStatus(success ? 200 : 500);
-            });
-            Logger.info('Handler API enabled');
-        };
+
+        this.#hydrationModules = hydrationModules || {};
+
         if (restToken) {
             this.#rest = new REST({ version: '9' }).setToken(restToken);
             // check if the token is valid by requesting the client user
@@ -103,55 +103,41 @@ module.exports = class Handler extends EventEmitter {
      * @private
      */
     #listenEvents() {
-        for (const event of statics.events) {
+        for (const event of Object.values(Events)) {
             this.#client.on(event, (...args) => {
-                this.emit('event', event, ...args);
                 if (this.events.has(event)) {
-                    const listeners = this.events.get(event);
-                    for (const listener of listeners) {
-                        if (!listener?.emitter) {
-                            try {
-                                listener.callback(...args);
-                            } catch (err) {
-                                Logger.error(err);
-                            }
-                        };
+                    for (const listener of this.events.get(event)) {
+                        try {
+                            listener(...args);
+                        } catch (err) {
+                            Logger.error([err, `Error in event ${event}`]);
+                        }
                     }
-                    this.events.set(event, listeners.filter((listener) => {
-                        const once = listener.once;
-                        if (!listener?.emitter) return !once;
-                        return true;
-                    }));
+
+                    this.events.set(event, this.events.get(event).filter((listener) => !listener?.emitter ? !listener.once : true));
                 }
             });
-        }
+        };
+
         if (this.#customEmitters) {
             for (const emitter of this.#customEmitters) {
                 for (const event of emitter.events) {
-                    emitter.emitter.on(event, (...args) => {
-                        this.emit(emitter.name, event, ...args);
+                    emitter.on(event, (...args) => {
                         if (this.events.has(event)) {
-                            const listeners = this.events.get(event);
-                            for (const listener of listeners) {
-                                if (listener?.emitter === emitter.name) {
-                                    try {
-                                        listener.callback(...args);
-                                    } catch (err) {
-                                        Logger.error(err);
-                                    };
-                                };
-                            };
-                            this.events.set(event, listeners.filter((listener) => {
-                                const once = listener.once;
-                                if (listener?.emitter === emitter.name) {
-                                    return !once;
-                                } else return true;
-                            }));
-                        };
+                            for (const listener of this.events.get(event)) {
+                                try {
+                                    listener(...args);
+                                } catch (err) {
+                                    Logger.error([err, `Error in event ${event}`]);
+                                }
+                            }
+
+                            this.events.set(event, this.events.get(event).filter((listener) => !listener?.emitter ? true : (listener.emitter === emitter.name ? !listener.once : true)));
+                        }
                     });
-                };
-            };
-        };
+                }
+            }
+        }
     }
     /**
      * Loads all the events, commands and interactions
@@ -236,7 +222,7 @@ module.exports = class Handler extends EventEmitter {
                 if (file.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const event = require(path.join(this.#eventsPath, file));
                 if (!(event instanceof EventBuilder)) return;
-                event.hydrate(this.#client);
+                event.hydrate(this.#client, this.#hydrationModules);
                 let listeners = this.events.get(event.name);
                 if (!listeners) {
                     listeners = new Array(event);
@@ -280,7 +266,7 @@ module.exports = class Handler extends EventEmitter {
                 if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const interaction = require(path.join(this.#interactionsPath, file));
                 if (!(interaction instanceof InteractionBuilder)) return;
-                interaction.hydrate(this.#client);
+                interaction.hydrate(this.#client, this.#hydrationModules);
                 this.interactions.set(interaction.name, interaction);
                 Logger.infog(`${fileName} loaded`);
             };
@@ -319,7 +305,7 @@ module.exports = class Handler extends EventEmitter {
                 if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 const command = require(path.join(this.#commandsPath, file));
                 if (!(command instanceof CommandBuilder)) return;
-                command.hydrate(this.#client);
+                command.hydrate(this.#client, this.#hydrationModules);
                 if (command.hasSlash) {
                     this.slashCommands.set(command.customId, command.slash);
                 };

@@ -8,7 +8,7 @@ module.exports = class Mongoose {
      * Requires the Config module to be initialized first with a database config present
      * @param {string} uri The uri to the database (optional if Config was initialized)
      */
-    init(uri) {
+    static init(uri) {
         if (!uri || typeof uri !== 'string') throw new Error('No database config present');
         const connect = () => mongoose.connect(uri, {
             useUnifiedTopology: true,

@@ -1,15 +1,12 @@
 const path = require('path');
 const Logger = require('./logger');
-const Server = require('./server');
 
 /**
  * @class Config
  * @classdesc The Config class is used to store and retrieve configuration data
  */
 module.exports = class Config {
-    static called = false;
-    static configPath = null;
-    static config = null;
+    #configPath = null;
 
     /**
      * Returns the path from where the Handler was called
@@ -24,21 +21,35 @@ module.exports = class Config {
         return path;
     }
 
+    #keys = [];
+
     /**
      * Reloads the config file
-     * @return {object} Returns the config object
+     * @return {void}
      */
-    static reload() {
-        const old = Config.config;
+    reload() {
+        const old = { ...this };
+        const oldKeys = [...this.#keys];
+        delete require.cache[require.resolve(this.#configPath)];
         try {
-            delete require.cache[require.resolve(Config.configPath)];
-            Config.config = require(Config.configPath);
-            Logger.info('Loaded config');
-            return Config.config;
-        } catch (e) {
-            Config.config = old;
-            Logger.error('Failed to load config');
-            return false;
+            const config = require(this.#configPath);
+            for (const key of Object.keys(config)) {
+                if (key === 'reload') {
+                    Logger.warn(`Config key 'reload' is reserved`);
+                    continue;
+                }
+                this[key] = config[key];
+                this.#keys.push(key);
+            }
+            Logger.info(`Config reloaded`);
+        } catch (err) {
+            Logger.error(`Failed to reload config: ${err.message}`);
+            for (const key of this.#keys) {
+                delete this[key];
+            }
+            for (const key of oldKeys) {
+                this[key] = old[key];
+            }
         }
     }
 
@@ -46,21 +57,11 @@ module.exports = class Config {
      * Initializes the config
      * @constructor
      * @param {string} configPath The path of the config relative to from where the constructor is called
-     * @return {object} Returns the config object
+     * @return {void}
      */
     constructor(configPath) {
-        if (!Config.called) {
-            Config.called = true;
-            if (!configPath || typeof configPath !== 'string') throw new Error('Invalid config path');
-            Config.configPath = path.join(this.#getInstPath(), configPath);
-            if (Server.app && Server.app.listen && typeof Server.app.listen === 'function') {
-                Server.app.post('/Config/reload', (req, res) => {
-                    const success = Config.reload();
-                    res.sendStatus(success ? 200 : 500);
-                });
-                Logger.info('Config API initialized');
-            };
-            return Config.reload();
-        } else throw new Error('Config is already initialized');
+        if (!configPath || typeof configPath !== 'string') throw new Error('Invalid config path');
+        this.#configPath = path.join(this.#getInstPath(), configPath);
+        this.reload();
     }
 };
