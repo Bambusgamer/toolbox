@@ -11,8 +11,6 @@ const {
     Events,
 } = require('discord.js');
 const Logger = require('./logger');
-const Server = require('./server');
-const statics = require('../util/statics');
 const CommandBuilder = require('../classes/command');
 const EventBuilder = require('../classes/event');
 const InteractionBuilder = require('../classes/interaction');
