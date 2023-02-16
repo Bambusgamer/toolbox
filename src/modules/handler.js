@@ -106,7 +106,7 @@ module.exports = class Handler extends EventEmitter {
                 if (this.events.has(event)) {
                     for (const listener of this.events.get(event)) {
                         try {
-                            listener(...args);
+                            listener.callback(...args);
                         } catch (err) {
                             Logger.error([err, `Error in event ${event}`]);
                         }
@@ -124,7 +124,7 @@ module.exports = class Handler extends EventEmitter {
                         if (this.events.has(event)) {
                             for (const listener of this.events.get(event)) {
                                 try {
-                                    listener(...args);
+                                    listener.callback(...args);
                                 } catch (err) {
                                     Logger.error([err, `Error in event ${event}`]);
                                 }
