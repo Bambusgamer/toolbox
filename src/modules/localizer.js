@@ -87,7 +87,7 @@ module.exports = class Localizer {
      * @param {...*} placeholders The placeholders
      * @return {string} The string
      */
-    static get(language, key, ...placeholders) {
+    get(language, key, ...placeholders) {
         if (!language || typeof language !== 'string') throw new Error(`Invalid language ${language}`);
         if (!key || typeof key !== 'string') throw new Error(`Invalid key ${key}`);
         if (!this.#languagePack.languages[language]) throw new Error(`Language ${language} is not supported`);
@@ -105,7 +105,7 @@ module.exports = class Localizer {
      * @param {...*} placeholders The placeholders
      * @return {string} The string
      */
-    static getDefault(key, ...placeholders) {
+    getDefault(key, ...placeholders) {
         return Localizer.get(this.#languagePack.defaultLanguage, key, ...placeholders);
     }
 
@@ -115,7 +115,7 @@ module.exports = class Localizer {
      * @param {...*} placeholders The placeholders
      * @return {object} The strings
      */
-    static getAll(key, ...placeholders) {
+    getAll(key, ...placeholders) {
         if (!key || typeof key !== 'string') throw new Error(`Invalid key ${key}`);
         const strings = {};
         for (const [peerLanguage, language] of Object.entries(this.#languagePack.languages)) {
