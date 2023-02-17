@@ -106,7 +106,7 @@ module.exports = class Localizer {
      * @return {string} The string
      */
     getDefault(key, ...placeholders) {
-        return Localizer.get(this.#languagePack.defaultLanguage, key, ...placeholders);
+        return this.get(this.#languagePack.defaultLanguage, key, ...placeholders);
     }
 
     /**
