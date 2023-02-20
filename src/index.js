@@ -9,3 +9,4 @@ exports.EventBuilder = require('./classes/event');
 exports.InteractionBuilder = require('./classes/interaction');
 exports.Languages = require('./util/statics').supportedDiscordLanguages;
 exports.hex = require('./util/hex');
+exports.bitfieldUtil = require('./util/bitfieldUtil');

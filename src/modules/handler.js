@@ -396,6 +396,29 @@ module.exports = class Handler extends EventEmitter {
         }
         return true;
     };
+
+    /**
+     * Overwrites all the slash commands
+     * @return {boolean} Success of the operation
+     */
+    async overwriteSlash() {
+        try {
+            if (!this.#ready()) return (Logger.error('Client and rest not ready') && false);
+            const body = [];
+            this.slashCommands.forEach((command) => {
+                body.push(command.data);
+            });
+            this.#rest.put(
+                Routes.applicationCommands(this.#client.user.id),
+                { body },
+            ).then((data) => Logger.infog(`Overwrote ${data.length} slash commands`));
+        } catch (err) {
+            Logger.error(err);
+            return false;
+        }
+        return true;
+    };
+
     /**
      * Deletes a slash command
      * @param {string} commandId The command id
