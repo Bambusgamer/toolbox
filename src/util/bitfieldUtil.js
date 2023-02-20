@@ -5,7 +5,7 @@ module.exports = class BitfieldUtility {
      * @return {Number} The number
      */
     static exportBits(bits) {
-        if (!(bits instanceof Number || bits instanceof Array || bits instanceof BigInt)) throw new Error('Bits must be a number, array, or bigint');
+        if (!['number', 'array', 'bigint'].includes(typeof bits)) throw new Error('Bits must be a number, array, or bigint');
         if (bits instanceof Number) return bits;
         if (bits instanceof BigInt) return Number(bits);
         if (bits instanceof Array) {
