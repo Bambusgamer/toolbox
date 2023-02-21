@@ -66,12 +66,12 @@ class CommandBuilder {
         if (!client) throw new Error('Client is required to hydrate command');
         if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
         if (this.hasSlash) {
-            this.slash.data = this.slash.data(client, modules);
+            this.slash.data = JSON.stringify(this.slash.data(client, modules));
             if (this.slash.autocomplete) this.slash.autocomplete = this.slash.autocomplete.bind(null, client, modules);
             this.slash.callback = this.slash.callback.bind(null, client, modules);
         }
         if (this.hasBetaSlash) {
-            this.betaSlash.data = this.betaSlash.data(client, modules);
+            this.betaSlash.data = JSON.stringify(this.betaSlash.data(client, modules));
             if (this.betaSlash.autocomplete) this.betaSlash.autocomplete = this.betaSlash.autocomplete.bind(null, client, modules);
             this.betaSlash.callback = this.betaSlash.callback.bind(null, client, modules);
         }
