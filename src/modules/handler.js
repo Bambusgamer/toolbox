@@ -350,7 +350,7 @@ module.exports = class Handler extends EventEmitter {
             });
             this.#rest.put(
                 Routes.applicationCommands(this.#client.user.id),
-                { body },
+                { body: JSON.stringify(body) },
             ).then((data) => Logger.infog(`Registered ${data.length} slash commands`));
         } catch (err) {
             Logger.error(err);
@@ -388,7 +388,7 @@ module.exports = class Handler extends EventEmitter {
             if (!guildId || typeof guildId !== 'string') return (Logger.warn('Invalid guild id') && false);
             this.#rest.put(
                 Routes.applicationGuildCommands(this.#client.user.id, guildId),
-                { body },
+                { body: JSON.stringify(body) },
             ).then((data) => Logger.infog(`Registered ${data.length} beta slash commands`));
         } catch (err) {
             Logger.error(err);
@@ -410,7 +410,7 @@ module.exports = class Handler extends EventEmitter {
             });
             this.#rest.put(
                 Routes.applicationCommands(this.#client.user.id),
-                { body },
+                { body: JSON.stringify(body) },
             ).then((data) => Logger.infog(`Overwrote ${data.length} slash commands`));
         } catch (err) {
             Logger.error(err);
