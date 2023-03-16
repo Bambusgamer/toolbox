@@ -29,6 +29,7 @@ module.exports = class ColorProvidor {
      * intFromHex('ff') // 255
      */
     static intFromHex(hex) {
+        if (hex.startsWith('#')) hex = hex.slice(1);
         return parseInt(hex, 16);
     }
 
@@ -53,6 +54,7 @@ module.exports = class ColorProvidor {
      * rgbFromHex('ffffff') // [255, 255, 255]
      */
     static rgbFromHex(hex) {
+        if (hex.startsWith('#')) hex = hex.slice(1);
         return [intFromHex(hex.slice(0, 2)), intFromHex(hex.slice(2, 4)), intFromHex(hex.slice(4, 6))];
     }
 };
