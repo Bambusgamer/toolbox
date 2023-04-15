@@ -109,12 +109,6 @@ const handler = new Handler({
 
 // reload
 handler.reload();
-// register all slashs
-handler.register();
-// register a beta slash ([commandData], guildId)
-handler.register([], '');
-// delete any slash (commandId, guildId)
-handler.deleteSlash('', '')
 ```
 
 #### Localizer

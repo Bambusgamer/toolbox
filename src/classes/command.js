@@ -1,42 +1,54 @@
-/* eslint-disable max-len */
-/* eslint-disable no-unused-vars */
-const { Client } = require('discord.js');
-
-
 /**
- * The base class for all commands
- * @abstract
- * @class
+ * @class CommandBuilder
+ * @description The base class for all commands
  */
 class CommandBuilder {
     /**
-     * Checks if a slash command is present
-     * @return {boolean}
+     * @function hasSlash
+     * @description Checks if a slash command is present
+     * @return {boolean} Whether a slash command is present
      */
     get hasSlash() {
         return Boolean(this.slash);
     }
     /**
-     * Checks if a beta slash command is present
-     * @return {boolean}
+     * @function hasBetaSlash
+     * @description Checks if a beta slash command is present
+     * @return {boolean} Whether a beta slash command is present
      */
     get hasBetaSlash() {
         return Boolean(this.betaSlash);
     }
     /**
-     * Checks if a text command is present
-     * @return {boolean}
+     * @function hasText
+     * @description Checks if a text command is present
+     * @return {boolean} Whether a text command is present
      */
     get hasText() {
         return Boolean(this.text);
     }
 
     /**
-     * Creates a new Command and hydrates the command data
+     * @description Creates a new Command and hydrates the command data
      * @param {object} obj The object to check
      * @param {object} obj.slash The slash command data
      * @param {object} obj.betaSlash The beta slash command data
      * @param {object} obj.text The text command data
+     * @constructor
+     * @example
+     * const { CommandBuilder } = require('@bambusgamer/toolbox');
+     *
+     * module.exports = new CommandBuilder({
+     *    slash: {
+     *       data: () => ({
+     *         name: 'ping',
+     *         description: 'Ping! Pong!'
+     *      }),
+     *      async callback(client, modules, interaction) {
+     *        await interaction.reply('Pong!');
+     *      }
+     *    },
+     * });
      */
     constructor({ slash = null, betaSlash = null, text = null }) {
         if (slash && typeof slash !== 'object') throw new Error('Invalid slash command data');
@@ -58,56 +70,57 @@ class CommandBuilder {
     /**
      * Hydrates the slash command builder
      * Must be called before the command is registered
-     * @param {Client} client The client
-     * @param {object} modules The modules to pass to the command
+     * @param {*} options The options to hydrate the command with
      * @return {void}
      */
-    hydrate(client, modules) {
-        if (!client) throw new Error('Client is required to hydrate command');
-        if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
+    hydrate(...options) {
         if (this.hasSlash) {
-            this.slash.data = this.slash.data(client, modules);
-            if (this.slash.autocomplete) this.slash.autocomplete = this.slash.autocomplete.bind(null, client, modules);
-            this.slash.callback = this.slash.callback.bind(null, client, modules);
+            this.slash.data = this.slash.data(...options);
+            if (this.slash.autocomplete) this.slash.autocomplete = this.slash.autocomplete.bind(null, ...options);
+            this.slash.callback = this.slash.callback.bind(null, ...options);
         }
         if (this.hasBetaSlash) {
-            this.betaSlash.data = this.betaSlash.data(client, modules);
-            if (this.betaSlash.autocomplete) this.betaSlash.autocomplete = this.betaSlash.autocomplete.bind(null, client, modules);
-            this.betaSlash.callback = this.betaSlash.callback.bind(null, client, modules);
+            this.betaSlash.data = this.betaSlash.data(...options);
+            if (this.betaSlash.autocomplete) this.betaSlash.autocomplete = this.betaSlash.autocomplete.bind(null, ...options);
+            this.betaSlash.callback = this.betaSlash.callback.bind(null, ...options);
         }
         if (this.hasText) {
-            this.text.data = this.text.data(client, modules);
-            this.text.callback = this.text.callback.bind(null, client, modules);
+            this.text.data = this.text.data(...options);
+            this.text.callback = this.text.callback.bind(null, ...options);
         }
     }
 
     /**
-     * Returns the customId associated with the command
-     * @return {string}
+     * @function customId
+     * @description Returns the customId associated with the command
+     * @return {string} The customId
      */
     get customId() {
         return this.slash?.data?.name || null;
     }
 
     /**
-     * Returns the customId associated with the beta command
-     * @return {string}
+     * @function betaCustomId
+     * @description Returns the beta customId associated with the command
+     * @return {string} The beta customId
      */
     get betaCustomId() {
         return this.betaSlash?.data?.name || null;
     }
 
     /**
-     * Returns the name associated with the command
-     * @return {string}
+     * @function name
+     * @description Returns the name associated with the command
+     * @return {string} The name
      */
     get name() {
         return this.text?.data?.name || null;
     }
 
     /**
-     * Returns the aliases associated with the command
-     * @return {Array<string>}
+     * @function aliases
+     * @description Returns the aliases associated with the command
+     * @return {Array<string>} The aliases
      */
     get aliases() {
         return this.text?.data?.aliases || null;

@@ -1,6 +1,11 @@
-module.exports = class BitfieldUtility {
+/**
+ * @class BitfieldUtility
+ * @description A utility class for bitfields
+ */
+class BitfieldUtility {
     /**
-     * Export a array of bitfield bits to a number
+     * @function BitfieldUtility#export
+     * @description Export a array of bitfield bits to a number
      * @param {[[BigInt], [Number], BigInt, Number]} bits The array of bits
      * @return {Number} The number
      */
@@ -18,3 +23,5 @@ module.exports = class BitfieldUtility {
         }
     }
 };
+
+module.exports = BitfieldUtility;

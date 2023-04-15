@@ -1,6 +1,11 @@
-module.exports = class ColorProvidor {
+/**
+ * @class ColorProvidor
+ * @description Provides methods for converting between different color formats
+ */
+class ColorProvidor {
     /**
-     * Converts an integer to a hex string
+     * @function hexFromInt
+     * @description Converts an integer to a hex string
      * @param {number} int Integer to convert to hex
      * @return {string} Hex string
      * @example
@@ -11,7 +16,8 @@ module.exports = class ColorProvidor {
     }
 
     /**
-     * Pads a hex string and adds a # to the start
+     * @function intFromHex
+     * @description Pads a hex string and adds a # to the start
      * @param {string} hex Hex string to pad
      * @return {string} Padded hex string
      * @example
@@ -22,7 +28,8 @@ module.exports = class ColorProvidor {
     }
 
     /**
-     * Converts a hex string to an integer
+     * @function intFromHex
+     * @description Converts a hex string to an integer
      * @param {string} hex Hex string to convert to integer
      * @return {number} Integer
      * @example
@@ -34,7 +41,8 @@ module.exports = class ColorProvidor {
     }
 
     /**
-     * Converts RGB values to a hex string
+     * @function hexFromRGB
+     * @description Converts RGB values to a hex string
      * @param {Number} r Red value
      * @param {Number} g Green value
      * @param {Number} b Blue value
@@ -47,7 +55,8 @@ module.exports = class ColorProvidor {
     }
 
     /**
-     * Converts a hex string to RGB values
+     * @function rgbFromHex
+     * @description Converts a hex string to RGB values
      * @param {string} hex Hex string to convert to RGB
      * @return {Array} RGB array
      * @example
@@ -58,3 +67,5 @@ module.exports = class ColorProvidor {
         return [intFromHex(hex.slice(0, 2)), intFromHex(hex.slice(2, 4)), intFromHex(hex.slice(4, 6))];
     }
 };
+
+module.exports = ColorProvidor;

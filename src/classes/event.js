@@ -1,18 +1,25 @@
-// eslint-disable-next-line no-unused-vars
-const { Client } = require('discord.js');
-
 /**
- * The base class for all events
+ * @class EventBuilder
+ * @description The base class for all events
  */
 class EventBuilder {
     /**
-     * Creates a new Event
+     * @description Creates a new Event
      * @param {object} obj The event
      * @param {string} obj.name The name of the event the {Client} emits
      * @param {Boolean} obj.once Whether the event should only be emitted once
-     * @param {function} obj.callback The event data
-     * @param {object} obj.callback.modules The modules
-     * @param {Client} obj.callback.client The client
+     * @param {function} obj.callback The callback of the event
+     * @constructor
+     * @example
+     * const { EventBuilder } = require('@bambusgamer/toolbox');
+     *
+     * module.exports = new EventBuilder({
+     *    name: 'ready',
+     *    once: true,
+     *    async callback(client, modules) {
+     *       console.info('Bot is ready!');
+     *    },
+     * });
      */
     constructor({ name, once = false, emitter = null, callback, ...options }) {
         if (!name || typeof name !== 'string') throw new Error('Invalid event name');
@@ -28,14 +35,13 @@ class EventBuilder {
     }
 
     /**
-     * Hydrates the event
-     * @param {Client} client The client
-     * @param {object} modules The modules
+     * @function hydrate
+     * @description Hydrates the event
+     * @param {*} options The options to hydrate the event with
+     * @return {void}
      */
-    hydrate(client, modules) {
-        if (!client) throw new Error('Client is required to hydrate command');
-        if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
-        this.callback = this.callback.bind(null, client, modules);
+    hydrate(...options) {
+        this.callback = this.callback.bind(null, ...options);
     }
 };
 

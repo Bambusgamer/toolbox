@@ -1,17 +1,23 @@
-/* eslint-disable no-unused-vars */
-const { Client, Interaction } = require('discord.js');
-
 /**
- * The base class for all interactions
+ * @class InteractionBuilder
+ * @description The base class for all interactions
  */
 class InteractionBuilder {
     /**
-     * Creates a new Interaction
+     * @description Creates a new Interaction
      * @param {object} obj The interaction
      * @param {string} obj.customId The customId of the interaction
-     * @param {function} obj.callback The interaction data
-     * @param {Client} obj.callback.client The client
-     * @param {Interaction} obj.callback.interaction The interaction
+     * @param {function} obj.callback The callback of the interaction
+     * @constructor
+     * @example
+     * const { InteractionBuilder } = require('@bambusgamer/toolbox');
+     *
+     * module.exports = new InteractionBuilder({
+     *   customId: 'test',
+     *   async callback(interaction, modules) {
+     *      await interaction.reply('Test');
+     *   }
+     * });
      */
     constructor({ customId, callback, ...options }) {
         if (!customId || typeof customId !== 'string') throw new Error('Invalid interaction customId');
@@ -24,20 +30,19 @@ class InteractionBuilder {
     }
 
     /**
-     * Hydrates the interaction
-     * @param {Client} client The client
-     * @param {object} modules The modules
+     * @function hydrate
+     * @description Hydrates the interaction
+     * @param {*} options The options to hydrate the interaction with
      * @return {void}
      */
-    hydrate(client, modules) {
-        if (!client) throw new Error('Client is required to hydrate command');
-        if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
-        this.callback = this.callback.bind(null, client, modules);
+    hydrate(...options) {
+        this.callback = this.callback.bind(null, ...options);
     }
 
     /**
-     * Returns the name associated with the interaction
-     * @return {string}
+     * @function name
+     * @description Returns the name associated with the interaction
+     * @return {string} The customId of the interaction
      */
     get name() {
         return this.customId;

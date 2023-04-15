@@ -1,33 +1,24 @@
-/* eslint-disable max-len */
-/* eslint-disable no-unused-vars */
 const EventEmitter = require('events');
 const fs = require('fs');
 const path = require('path');
-const { REST } = require('@discordjs/rest');
-const {
-    Collection,
-    Routes,
-    Client,
-    Events,
-} = require('discord.js');
-const Logger = require('./logger');
-const CommandBuilder = require('../classes/command');
-const EventBuilder = require('../classes/event');
-const InteractionBuilder = require('../classes/interaction');
+const Logger = require('./logger.js');
+const CommandBuilder = require('../classes/command.js');
+const EventBuilder = require('../classes/event.js');
+const InteractionBuilder = require('../classes/interaction.js');
 
 module.exports = class Handler extends EventEmitter {
-    // Private fields
-    #rest = null;
-    #client = null;
+    #emitters = [];
     #eventsPath = null;
     #commandsPath = null;
     #interactionsPath = null;
-    #hydrationModules = null;
-    #customEmitters = null;
+    #hydrationModules = {};
+    #options = [];
     #oldstate = null;
     /**
-     * Returns the path from where the Handler was called
+     * @function getInstPath
+     * @description Gets the path of the instance
      * @return {string} path of the instance
+     * @private
      */
     #getInstPath() {
         const stack = new Error().stack;
@@ -38,73 +29,80 @@ module.exports = class Handler extends EventEmitter {
         return path;
     }
     /**
-     * Checks if the Handler is ready to register slash commands
-     * @return {boolean} Whether the Handler is ready or not
-     */
-    #ready() {
-        if (!this.#rest) return false;
-        if (!this.#client) return false;
-        return true;
-    }
-    /**
      * Initializes the handler module
      * @param {object} obj Handler options
-     * @param {customclient} obj.client The client to attach the collections to
+     * @param {array} obj.emitters The emitters to listen to
      * @param {object} obj.paths The paths to use relative to from where the constructor is called
      * @param {string} obj.paths.events The path to the events folder
      * @param {string} obj.paths.commands The path to the commands folder
      * @param {string} obj.paths.interactions The path to the interactions folder
-     * @param {object} obj.hydrationModules The modules to hydrate
-     * @param {string} obj.restToken The token to use for the rest client
-     * @param {array} obj.customEmitters The custom emitters to listen to
+     * @param {object} obj.hydrationModules The object passed to registered functions
+     * @param {array} options The options that will be directly passed to registered functions
      */
-    constructor({ client, paths, hydrationModules, restToken, customEmitters }) {
+    constructor({ emitters = [], paths, hydrationModules = {}, options = [] }) {
         super();
+
+        if (!Array.isArray(emitters)) throw new Error('Emitters must be an array');
+        for (const emitter of emitters) {
+            if (typeof emitter !== 'object') throw new Error('Emitters must be an array of objects');
+            if (!emitter.name || typeof emitter.name !== 'string') throw new Error('Emitters must have a name property');
+            if (!emitter.emitter || !(emitter.emitter instanceof EventEmitter)) throw new Error('Emitters must have a emitter property that is an EventEmitter');
+        }
+        if (emitters) this.#emitters = emitters;
+
         const { events, commands, interactions } = paths;
-        this.#client = client;
-        if (!client) throw new Error('Client is required to hydrate command');
-        if (!(client instanceof Client)) throw new Error('Client must be an instance of Discord.Client');
+
         if (events && typeof events !== 'string') throw new Error('Events path must be a string');
         if (events) this.#eventsPath = path.join(this.#getInstPath(), events);
         if (commands && typeof commands !== 'string') throw new Error('Commands path must be a string');
         if (commands) this.#commandsPath = path.join(this.#getInstPath(), commands);
         if (interactions && typeof interactions !== 'string') throw new Error('Interactions path must be a string');
         if (interactions) this.#interactionsPath = path.join(this.#getInstPath(), interactions);
-        if (hydrationModules && typeof hydrationModules !== 'object') throw new Error('Hydration modules must be an object');
-        if (customEmitters && !Array.isArray(customEmitters)) throw new Error('Custom emitters must be an array');
-        if (customEmitters) this.#customEmitters = customEmitters;
 
-        this.events = new Collection();
-        this.slashCommands = new Collection();
-        this.betaSlashCommands = new Collection();
-        this.textCommands = new Collection();
-        this.interactions = new Collection();
+        if (typeof hydrationModules !== 'object') throw new Error('Hydration modules must be an object');
+        this.#hydrationModules = hydrationModules;
 
-        this.#hydrationModules = hydrationModules || {};
+        if (!Array.isArray(options)) throw new Error('Options must be an array');
+        this.#options = options;
 
-        if (restToken) {
-            this.#rest = new REST({ version: '9' }).setToken(restToken);
-            // check if the token is valid by requesting the client user
-            this.#rest.get(Routes.user('@me')).then(() => {
-                Logger.info('REST client initialized');
-            }).catch((err) => {
-                Logger.fatal([err, 'REST client failed initialization']);
-                this.#rest = null;
-            });
-        } else Logger.warn('Handler REST client disabled');
+        this.events = new Map();
+        this.slashCommands = new Map();
+        this.betaSlashCommands = new Map();
+        this.textCommands = new Map();
+        this.interactions = new Map();
+
+
         this.#listenEvents();
         Logger.info('Handler module initialized');
     }
     /**
-     * Listens to all events and dynamically passes them to registered events
+     * @function patchEmitter
+     * @param {object} emitter The emitter to patch
+     * @return {void}
+     * @private
+     */
+    #patchEmitter(emitter) {
+        const oldEmit = emitter.emit;
+        emitter.emit = function (event, ...args) {
+            oldEmit.call(this, '*', event, ...args);
+            oldEmit.call(this, event, ...args);
+        };
+    }
+    /**
+     * @function listenEvents
+     * @description Listens to all events and dynamically passes them to registered events
      * @return {void}
      * @private
      */
     #listenEvents() {
-        for (const event of Object.values(Events)) {
-            this.#client.on(event, (...args) => {
+        for (const { name, emitter } of this.#emitters) {
+            this.#patchEmitter(emitter);
+
+            emitter.on('*', (event, ...args) => {
                 if (this.events.has(event)) {
-                    for (const listener of this.events.get(event)) {
+                    const listeners = this.events.get(event);
+                    for (const listener of listeners) {
+                        if (typeof listener?.emitter === 'string' && listener.emitter !== name) continue;
                         try {
                             listener.callback(...args);
                         } catch (err) {
@@ -112,33 +110,17 @@ module.exports = class Handler extends EventEmitter {
                         }
                     }
 
-                    this.events.set(event, this.events.get(event).filter((listener) => !listener?.emitter ? !listener.once : true));
+                    this.events.set(event, listeners.filter((listener) => {
+                        if (typeof listener?.emitter === 'string' && listener.emitter !== name) return true;
+                        return !listener?.once;
+                    }));
                 }
             });
-        };
-
-        if (this.#customEmitters) {
-            for (const emitter of this.#customEmitters) {
-                for (const event of emitter.events) {
-                    emitter.on(event, (...args) => {
-                        if (this.events.has(event)) {
-                            for (const listener of this.events.get(event)) {
-                                try {
-                                    listener.callback(...args);
-                                } catch (err) {
-                                    Logger.error([err, `Error in event ${event}`]);
-                                }
-                            }
-
-                            this.events.set(event, this.events.get(event).filter((listener) => !listener?.emitter ? true : (listener.emitter === emitter.name ? !listener.once : true)));
-                        }
-                    });
-                }
-            }
         }
     }
     /**
-     * Loads all the events, commands and interactions
+     * @function load
+     * @description Loads all events, commands and interactions
      * @return {boolean} Success of the operation
      */
     load() {
@@ -163,11 +145,12 @@ module.exports = class Handler extends EventEmitter {
         return success;
     }
     /**
-     * Clears all the events, commands and interactions
+     * @function clear
+     * @description Moves all loaded events, commands and interactions to the old state and clears the current state
      * @return {void}
      * @private
      */
-    clear() {
+    #clear() {
         this.#oldstate = {
             events: this.events.clone(),
             slashCommands: this.slashCommands.clone(),
@@ -182,15 +165,18 @@ module.exports = class Handler extends EventEmitter {
         this.textCommands.clear();
     }
     /**
-     * Reloads all the events, commands and interactions
+     * @function reload
+     * @description Reloads all the events, commands and interactions
      * @return {boolean} Success of the operation
      */
     reload() {
-        this.clear();
+        this.#clear();
         return this.load();
     }
     /**
-     * Restores all the events, commands and interactions if a reload fails
+     * @function restore
+     * @description Restores the old state
+     * @return {void}
      * @private
      */
     #restore() {
@@ -204,23 +190,51 @@ module.exports = class Handler extends EventEmitter {
         }
     }
     /**
-     * Loads all the events
+     * @function loadFile
+     * @description Loads a file
+     * @param {string} path The path to the file
+     * @return {object} The loaded file
+     * @private
+     */
+    #loadFile(path) {
+        delete require.cache[require.resolve(path)];
+        return {
+            fileName: path.split('\\').pop().split('/').pop().split('.')[0],
+            file: require(path),
+        };
+    }
+    /**
+     * @function loadFolder
+     * @description Loads a folder
+     * @param {string} path The path to the folder
+     * @return {array} The loaded files
+     * @private
+     */
+    #loadFolder(path) {
+        const elements = fs.readdirSync(path, { withFileTypes: true });
+        const folders = elements.filter((element) => element.isDirectory());
+        const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
+        return [
+            ...files.map((file) => this.#loadFile(path + '/' + file.name)),
+            ...folders.map((folder) => this.#loadFolder(path + '/' + folder.name)).flat(),
+        ];
+    }
+    /**
+     * @function loadEvents
+     * @description Loads all the events from the events folder and its subfolders
      * @return {boolean} Success of the operation
      * @private
      */
     #loadEvents() {
         let success = true;
         try {
-            const elements = fs.readdirSync(this.#eventsPath, { withFileTypes: true });
-            const folders = elements.filter((element) => element.isDirectory());
-            const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
-            const loadFile = (file) => {
-                const fileName = file.split('\\').pop().split('/').pop().split('.')[0];
-                delete require.cache[require.resolve(path.join(this.#eventsPath, file))];
-                if (file.startsWith('_')) return Logger.infog(`${fileName} skipped`);
-                const event = require(path.join(this.#eventsPath, file));
+            const eventFolder = this.#loadFolder(this.#eventsPath);
+            for (const { fileName, file: event } of eventFolder) {
+                if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
                 if (!(event instanceof EventBuilder)) return;
-                event.hydrate(this.#client, this.#hydrationModules);
+
+                event.hydrate(...this.#options, this.#hydrationModules);
+
                 let listeners = this.events.get(event.name);
                 if (!listeners) {
                     listeners = new Array(event);
@@ -228,19 +242,6 @@ module.exports = class Handler extends EventEmitter {
                 this.events.set(event.name, listeners);
                 Logger.infog(`${event.name} loaded`);
             };
-            for (const folder of folders) {
-                const folderPath = path.join(this.#eventsPath, folder.name);
-                const folderElements = fs.readdirSync(folderPath, { withFileTypes: true });
-                const folderFiles = folderElements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
-                if (folderFiles.length > 0) Logger.infoy(`\n${folder.name} events`);
-                for (const file of folderFiles) {
-                    loadFile(path.join(folder.name, file.name));
-                };
-            };
-            if (files.length > 0) Logger.infoy('\nroot events');
-            for (const file of files) {
-                loadFile(file.name);
-            };
         } catch (err) {
             Logger.error(err);
             success = false;
@@ -248,37 +249,24 @@ module.exports = class Handler extends EventEmitter {
         return success;
     }
     /**
-     * Loads all the interactions
+     * @function loadInteractions
+     * @description Loads all the interactions from the interactions folder and its subfolders
      * @return {boolean} Success of the operation
      * @private
      */
     #loadInteractions() {
         let success = true;
         try {
-            const elements = fs.readdirSync(this.#interactionsPath, { withFileTypes: true });
-            const folders = elements.filter((element) => element.isDirectory());
-            const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
-            const loadFile = (file) => {
-                const fileName = file.split('\\').pop().split('/').pop().split('.')[0];
-                delete require.cache[require.resolve(path.join(this.#interactionsPath, file))];
+            const interactionFolder = this.#loadFolder(this.#interactionsPath);
+            for (const { fileName, file: interaction } of interactionFolder) {
                 if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
-                const interaction = require(path.join(this.#interactionsPath, file));
                 if (!(interaction instanceof InteractionBuilder)) return;
-                interaction.hydrate(this.#client, this.#hydrationModules);
+
+                interaction.hydrate(...this.#options, this.#hydrationModules);
+
+                if (this.interactions.has(interaction.name)) throw new Error(`${fileName} has a duplicate interaction name`);
                 this.interactions.set(interaction.name, interaction);
                 Logger.infog(`${fileName} loaded`);
-            };
-            for (const folder of folders) {
-                const folderElements = fs.readdirSync(path.join(this.#interactionsPath, folder.name), { withFileTypes: true });
-                const folderFiles = folderElements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
-                if (folderFiles.length > 0) Logger.infoy(`\n${folder.name} interactions`);
-                for (const file of folderFiles) {
-                    loadFile(path.join(folder.name, file.name));
-                };
-            };
-            if (files.length > 0) Logger.infoy('\nroot interactions');
-            for (const file of files) {
-                loadFile(file.name);
             };
         } catch (err) {
             Logger.error(err);
@@ -287,49 +275,39 @@ module.exports = class Handler extends EventEmitter {
         return success;
     }
     /**
-     * Loads all the commands
+     * @function loadCommands
+     * @description Loads all the commands from the commands folder and its subfolders
      * @return {boolean} Success of the operation
      * @private
      */
     #loadCommands() {
         let success = true;
         try {
-            const elements = fs.readdirSync(this.#commandsPath, { withFileTypes: true });
-            const folders = elements.filter((element) => element.isDirectory());
-            const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
-            const loadFile = (file) => {
-                const fileName = file.split('\\').pop().split('/').pop().split('.')[0];
-                delete require.cache[require.resolve(path.join(this.#commandsPath, file))];
+            const commandFolder = this.#loadFolder(this.#commandsPath);
+            for (const { fileName, file: command } of commandFolder) {
                 if (fileName.startsWith('_')) return Logger.infog(`${fileName} skipped`);
-                const command = require(path.join(this.#commandsPath, file));
                 if (!(command instanceof CommandBuilder)) return;
-                command.hydrate(this.#client, this.#hydrationModules);
+
+                command.hydrate(...this.#options, this.#hydrationModules);
+
                 if (command.hasSlash) {
+                    if (this.slashCommands.has(command.customId)) throw new Error(`${fileName} has a duplicate slash command id`);
                     this.slashCommands.set(command.customId, command.slash);
                 };
                 if (command.hasBetaSlash) {
+                    if (this.betaSlashCommands.has(command.betaCustomId)) throw new Error(`${fileName} has a duplicate beta slash command id`);
                     this.betaSlashCommands.set(command.betaCustomId, command.betaSlash);
                 };
                 if (command.hasText) {
+                    if (this.textCommands.has(command.name)) throw new Error(`${fileName} has a duplicate text command name`);
                     this.textCommands.set(command.name, command.text);
                     for (const alias of command.aliases) {
+                        if (this.textCommands.has(alias)) throw new Error(`${fileName} has a duplicate text command alias`);
                         this.textCommands.set(alias, command.text);
                     };
                 };
                 Logger.infog(`${fileName} loaded`);
             };
-            for (const folder of folders) {
-                const folderElements = fs.readdirSync(path.join(this.#commandsPath, folder.name), { withFileTypes: true });
-                const folderFiles = folderElements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
-                if (folderFiles.length > 0) Logger.infoy(`\n${folder.name} commands`);
-                for (const file of folderFiles) {
-                    loadFile(path.join(folder.name, file.name));
-                }
-            }
-            if (files.length > 0) Logger.infoy('\nroot commands');
-            for (const file of files) {
-                loadFile(file.name);
-            }
         } catch (err) {
             Logger.error(err);
             success = false;
@@ -337,114 +315,20 @@ module.exports = class Handler extends EventEmitter {
         return success;
     }
     /**
-     * Registers all the slash commands
-     * @return {boolean} Success of the operation
-     * @async
+     * @function exportCommands
+     * @description Exports all the commands to a object of commands
+     * @param {boolean} [beta=false] Whether to export beta commands or not
+     * @return {object} The object of commands
+     * @public
+     * @example
+     * const commands = client.exportCommands();
+     * const betaCommands = client.exportCommands(true);
      */
-    async registerSlash() {
-        try {
-            if (!this.#ready()) return (Logger.error('Client and rest not ready') && false);
-            const body = [];
-            this.slashCommands.forEach((command) => {
-                body.push(command.data);
-            });
-            this.#rest.put(
-                Routes.applicationCommands(this.#client.user.id),
-                { body },
-            ).then((data) => Logger.infog(`Registered ${data.length} slash commands`));
-        } catch (err) {
-            Logger.error(err);
-            return false;
-        }
-        return true;
-    };
-    /**
-     * Registers beta slash commands
-     * @param {(string | array<string> | null)} commands The commands to register (null for all)
-     * @param {string} guildId The guild id to register the commands to
-     * @return {boolean} Success of the operation
-     * @async
-     */
-    async registerBetaSlash(commands, guildId) {
-        try {
-            if (!this.#ready()) return (Logger.error('Client and rest not ready') && false);
-            const body = [];
-            if (commands === null) {
-                this.betaSlashCommands.forEach((command) => {
-                    body.push(command.data);
-                });
-            } else if (typeof commands === 'array') {
-                this.betaSlashCommands.forEach((command) => {
-                    if (commands.includes(command.data.name)) body.push(command.data);
-                });
-            } else if (typeof commands === 'string') {
-                this.betaSlashCommands.forEach((command) => {
-                    if (commands === command.data.name) body.push(command.data);
-                });
-            } else {
-                Logger.warn('Invalid commands type. Viable types are: string, array<string>, null');
-                return false;
-            }
-            if (!guildId || typeof guildId !== 'string') return (Logger.warn('Invalid guild id') && false);
-            this.#rest.put(
-                Routes.applicationGuildCommands(this.#client.user.id, guildId),
-                { body },
-            ).then((data) => Logger.infog(`Registered ${data.length} beta slash commands`));
-        } catch (err) {
-            Logger.error(err);
-            return false;
-        }
-        return true;
-    };
-
-    /**
-     * Overwrites all the slash commands
-     * @return {boolean} Success of the operation
-     */
-    async overwriteSlash() {
-        try {
-            if (!this.#ready()) return (Logger.error('Client and rest not ready') && false);
-            const body = [];
-            this.slashCommands.forEach((command) => {
-                body.push(command.data);
-            });
-            this.#rest.put(
-                Routes.applicationCommands(this.#client.user.id),
-                { body },
-            ).then((data) => Logger.infog(`Overwrote ${data.length} slash commands`));
-        } catch (err) {
-            Logger.error(err);
-            return false;
-        }
-        return true;
-    };
-
-    /**
-     * Deletes a slash command
-     * @param {string} commandId The command id
-     * @param {string} guildId The guild id leave null for global
-     * @return {boolean} Success of the operation
-     * @async
-     */
-    async deleteSlash(commandId, guildId) {
-        try {
-            if (!this.#ready()) return (Logger.error('Client and rest not ready') && false);
-            if (!commandId || typeof commandId !== 'string') return (Logger.warn('Invalid command id') && false);
-            if (guildId && typeof guildId !== 'string') return (Logger.warn('Invalid guild id') && false);
-            if (!guildId) {
-                await this.#rest.delete(
-                    Routes.applicationCommand(this.#client.user.id, commandId),
-                );
-            } else {
-                await this.#rest.delete(
-                    Routes.applicationGuildCommand(this.#client.user.id, guildId, commandId),
-                );
-            }
-            Logger.infog(`Deleted slash command ${commandId}`);
-        } catch (err) {
-            Logger.error(err);
-            return false;
-        }
-        return true;
-    };
+    exportCommands(beta = false) {
+        const commands = {};
+        for (const [name, command] of beta ? this.betaSlashCommands : this.slashCommands) {
+            commands[name] = JSON.stringify(command.data);
+        };
+        return commands;
+    }
 };
