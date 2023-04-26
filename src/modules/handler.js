@@ -152,11 +152,11 @@ module.exports = class Handler extends EventEmitter {
      */
     #clear() {
         this.#oldstate = {
-            events: this.events.clone(),
-            slashCommands: this.slashCommands.clone(),
-            BetaSlashCommands: this.betaSlashCommands.clone(),
-            textCommands: this.textCommands.clone(),
-            interactions: this.interactions.clone(),
+            events: new Map(this.events),
+            slashCommands: new Map(this.slashCommands),
+            BetaSlashCommands: new Map(this.betaSlashCommands),
+            textCommands: new Map(this.textCommands),
+            interactions: new Map(this.interactions),
         };
         this.events.clear();
         this.interactions.clear();
