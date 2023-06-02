@@ -1,12 +1,12 @@
-const Logger = require('./logger');
+import Logger from './logger';
 
-module.exports = class AntiCrash {
-    static called = false;
+export default class AntiCrash {
+    static called: boolean = false;
 
     /**
      * Initializes the AntiCrash module and errors if it has already been initialized
      */
-    static init() {
+    static init(): void {
         if (!AntiCrash.called) {
             AntiCrash.called = true;
             process.on('unhandledRejection', Logger.error);
@@ -15,4 +15,4 @@ module.exports = class AntiCrash {
             Logger.info(`AntiCrash module initialized`);
         } else throw new Error('AntiCrash can only be called once');
     }
-};
+}

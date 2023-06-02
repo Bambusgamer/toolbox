@@ -1,15 +1,8 @@
-/**
- * @class BitfieldUtility
- * @description A utility class for bitfields
- */
-class BitfieldUtility {
+export default class BitfieldUtility {
     /**
-     * @function BitfieldUtility#export
-     * @description Export a array of bitfield bits to a number
-     * @param {[[BigInt], [Number], BigInt, Number]} bits The array of bits
-     * @return {Number} The number
+     * @description Export a bitfield to a number
      */
-    static export(bits) {
+    static export(bits: (bigint | number)[] | bigint | number): number {
         if (typeof bits === 'bigint') return Number(bits);
         if (typeof bits === 'number') return bits;
         if (bits instanceof Array) {
@@ -21,7 +14,6 @@ class BitfieldUtility {
             }
             return Number(out);
         }
+        return 0;
     }
-};
-
-module.exports = BitfieldUtility;
+}

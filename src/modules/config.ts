@@ -1,31 +1,32 @@
-const path = require('path');
-const Logger = require('./logger');
+import path from 'path';
+import Logger from './logger';
 
-/**
- * @class Config
- * @classdesc The Config class is used to store and retrieve configuration data
- */
-module.exports = class Config {
-    #configPath = null;
-
+export default class Config {
     /**
-     * Returns the path from where the Handler was called
-     * @return {string} path of the instance
+     * @description Returns the path from where the Handler was called
      */
-    #getInstPath() {
-        const stack = new Error().stack;
+    #getInstPath(): string {
+        const stack = new Error().stack as string;
         const frame = stack.split('\n')[3].trim().replace(/\\/g, '/');
         // Credits to discord@A7mooz#2962 for the regex
         const regex = /([A-Z]:)?((\/)([a-zA-Z0-9_ ]\.?)+)+\3/g;
-        const path = regex.exec(frame)[0];
-        return path;
+        return (regex.exec(frame) as string[])[0];
     }
 
-    #keys = [];
+    #keys: any[] = [];
+    [key: string]: any;
+    #configPath: string;
 
     /**
-     * Reloads the config file
-     * @return {void}
+     * @description Initializes the config
+     */
+    constructor(configPath: string) {
+        if (!configPath || typeof configPath !== 'string') throw new Error('Invalid config path');
+        this.#configPath = path.join(this.#getInstPath(), configPath);
+        this.reload();
+    }
+    /**
+     * @description Reloads the config file
      */
     reload() {
         const old = { ...this };
@@ -42,7 +43,7 @@ module.exports = class Config {
                 this.#keys.push(key);
             }
             Logger.info(`Config reloaded`);
-        } catch (err) {
+        } catch (err: any) {
             Logger.error(`Failed to reload config: ${err.message}`);
             for (const key of this.#keys) {
                 delete this[key];
@@ -52,16 +53,4 @@ module.exports = class Config {
             }
         }
     }
-
-    /**
-     * Initializes the config
-     * @constructor
-     * @param {string} configPath The path of the config relative to from where the constructor is called
-     * @return {void}
-     */
-    constructor(configPath) {
-        if (!configPath || typeof configPath !== 'string') throw new Error('Invalid config path');
-        this.#configPath = path.join(this.#getInstPath(), configPath);
-        this.reload();
-    }
-};
+}

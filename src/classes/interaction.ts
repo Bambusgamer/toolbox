@@ -1,14 +1,15 @@
-/**
- * @class InteractionBuilder
- * @description The base class for all interactions
- */
-class InteractionBuilder {
+interface InteractionOptions {
+    customId: string;
+    callback: (...args: any[]) => Promise<any> | any;
+}
+
+export default class InteractionBuilder {
+    customId: string;
+    callback: (...args: any[]) => Promise<any> | any;
+    [key: string]: any;
+
     /**
      * @description Creates a new Interaction
-     * @param {object} obj The interaction
-     * @param {string} obj.customId The customId of the interaction
-     * @param {function} obj.callback The callback of the interaction
-     * @constructor
      * @example
      * const { InteractionBuilder } = require('@bambusgamer/toolbox');
      *
@@ -19,7 +20,7 @@ class InteractionBuilder {
      *   }
      * });
      */
-    constructor({ customId, callback, ...options }) {
+    constructor({ customId, callback, ...options }: InteractionOptions) {
         if (!customId || typeof customId !== 'string') throw new Error('Invalid interaction customId');
         if (!callback || typeof callback !== 'function') throw new Error('Invalid interaction callback');
         this.customId = customId;
@@ -30,23 +31,16 @@ class InteractionBuilder {
     }
 
     /**
-     * @function hydrate
      * @description Hydrates the interaction
-     * @param {*} options The options to hydrate the interaction with
-     * @return {void}
      */
-    hydrate(...options) {
+    hydrate(...options: any[]) {
         this.callback = this.callback.bind(null, ...options);
     }
 
     /**
-     * @function name
      * @description Returns the name associated with the interaction
-     * @return {string} The customId of the interaction
      */
-    get name() {
+    get name(): string {
         return this.customId;
     }
-};
-
-module.exports = InteractionBuilder;
+}

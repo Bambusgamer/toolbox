@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "module": "commonjs",
+    "target": "es2022",
+    "esModuleInterop": true,
+    "typeRoots": ["node_modules/@types"],
+    "types": ["node"],
+    "declaration": true,
+  },
+}
