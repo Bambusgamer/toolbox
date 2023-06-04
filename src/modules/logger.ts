@@ -28,22 +28,22 @@ enum Colors {
     orange = 'orange',
 }
 
+/**
+ * @description Returns the path from where the Handler was called
+ */
+function getInstPath(): string {
+    const stack = new Error().stack as string;
+    const frame = stack.split('\n')[3].trim().replace(/\\/g, '/');
+    // Credits to discord@A7mooz#2962 for the regex
+    const regex = /([A-Z]:)?((\/)([a-zA-Z0-9_ ]\.?)+)+\3/g;
+    return (regex.exec(frame) as string[])[0];
+}
+
 export default class Logger {
     // Static fields
     static called = false;
     static logPath: string | null = null;
     static fileStream: Console | null = null;
-
-    /**
-     * @description Returns the path from where the Handler was called
-     */
-    #getInstPath(): string {
-        const stack = new Error().stack as string;
-        const frame = stack.split('\n')[3].trim().replace(/\\/g, '/');
-        // Credits to discord@A7mooz#2962 for the regex
-        const regex = /([A-Z]:)?((\/)([a-zA-Z0-9_ ]\.?)+)+\3/g;
-        return (regex.exec(frame) as string[])[0];
-    }
 
     /**
      * @description Logs content to the console
@@ -106,16 +106,16 @@ export default class Logger {
         }
     }
 
-    constructor(logpath: string) {
+    static init(logpath: string) {
         if (!Logger.called) {
             Logger.called = true;
             if (logpath && typeof logpath !== 'string') throw new Error('logpath must be a string');
-            Logger.logPath = logpath ? path.join(this.#getInstPath(), logpath) : null;
+            Logger.logPath = logpath ? path.join(getInstPath(), logpath) : null;
             Logger.fileStream = Logger.logPath
                 ? new Console({
-                      stdout: fs.createWriteStream(Logger.logPath, { flags: 'a+' }),
-                      stderr: fs.createWriteStream(Logger.logPath, { flags: 'a+' }),
-                  })
+                    stdout: fs.createWriteStream(Logger.logPath, { flags: 'a+' }),
+                    stderr: fs.createWriteStream(Logger.logPath, { flags: 'a+' }),
+                })
                 : null;
             Logger.info(`Logger module initialized`);
         } else throw new Error('Logger is already initialized');

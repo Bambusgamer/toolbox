@@ -113,7 +113,7 @@ export default class Localizer {
     /**
      * @description Returns a string from the language pack and replaces the placeholders
      */
-    get(language: string, key: string, ...placeholders: string[]): string {
+    get(language: string, key: string, ...placeholders: (string | number)[]): string {
         if (!language || typeof language !== 'string') throw new Error(`Invalid language ${language}`);
         if (!key || typeof key !== 'string') throw new Error(`Invalid key ${key}`);
         if (!this.#languagePack.languages[language]) throw new Error(`Language ${language} is not supported`);
@@ -121,7 +121,7 @@ export default class Localizer {
             throw new Error(`Key ${key} does not exist in language ${this.#languagePack.languages[language]}`);
         let translation = this.#languagePack.strings[this.#languagePack.languages[language]][key];
         for (let i = 0; i < placeholders.length; i++) {
-            translation = translation.replace(`{{${i + 1}}}`, placeholders[i]);
+            translation = translation.replace(`{{${i + 1}}}`, String(placeholders[i]));
         }
         return translation;
     }
@@ -129,14 +129,14 @@ export default class Localizer {
     /**
      * @description Returns a string from the language pack in its default language and replaces the placeholders
      */
-    getDefault(key: string, ...placeholders: string[]): string {
+    getDefault(key: string, ...placeholders: (string | number)[]): string {
         return this.get(this.#languagePack.defaultLanguage, key, ...placeholders);
     }
 
     /**
      * @description Returns all possible strings and replaces the placeholders
      */
-    getAll(key: string, ...placeholders: string[]): LocalizedStrings {
+    getAll(key: string, ...placeholders: (string | number)[]): LocalizedStrings {
         if (!key || typeof key !== 'string') throw new Error(`Invalid key ${key}`);
         const strings: LocalizedStrings = {};
         for (const [peerLanguage, language] of Object.entries(this.#languagePack.languages)) {

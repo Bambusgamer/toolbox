@@ -8,5 +8,5 @@ export { default as CommandBuilder } from './classes/command';
 export { default as EventBuilder } from './classes/event';
 export { default as InteractionBuilder } from './classes/interaction';
 export * from './util/statics';
-export { default as Hex } from './util/hex';
-export { default as BitfieldUtility } from './util/bitfieldUtil';
+export { default as ColorProvider } from './util/ColorProvider';
+export { default as BitfieldUtility } from './util/bitfieldUtility';
