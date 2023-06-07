@@ -14,8 +14,8 @@ interface Emitter {
 interface HandlerOptions {
     emitters: [Emitter] | [];
     paths: { events?: string; commands?: string; interactions?: string };
-    hydrationModules: { [key: string]: any };
-    options: any[];
+    modules?: { [key: string]: any };
+    options?: any[];
 }
 
 interface ExportedCommands {
@@ -27,10 +27,10 @@ export default class Handler extends EventEmitter {
     #eventsPath: string | null = null;
     #commandsPath: string | null = null;
     #interactionsPath: string | null = null;
-    #hydrationModules: { [key: string]: any } = {};
-    #options: any[] = [];
     #oldstate: any = null;
     #eventWildCardCache: Map<string, string[]> = new Map();
+
+    #hydrationArgs: any[] = [];
 
     events: Map<string, EventBuilder[]>;
     slashCommands: Map<string, SlashCommand>;
@@ -60,7 +60,7 @@ export default class Handler extends EventEmitter {
     /**
      * @description Initializes the handler module
      */
-    constructor({ emitters = [], paths, hydrationModules = {}, options = [] }: HandlerOptions) {
+    constructor({ emitters = [], paths, modules = {}, options = [] }: HandlerOptions) {
         super();
 
         if (!Array.isArray(emitters)) throw new Error('Emitters must be an array');
@@ -82,11 +82,11 @@ export default class Handler extends EventEmitter {
         if (interactions && typeof interactions !== 'string') throw new Error('Interactions path must be a string');
         if (interactions) this.#interactionsPath = path.join(this.#getInstPath(), interactions);
 
-        if (typeof hydrationModules !== 'object') throw new Error('Hydration modules must be an object');
-        this.#hydrationModules = hydrationModules;
-
         if (!Array.isArray(options)) throw new Error('Options must be an array');
-        this.#options = options;
+        if (options.length > 0) this.#hydrationArgs = [...options];
+
+        if (typeof modules !== 'object') throw new Error('Hydration modules must be an object');
+        if (Object.keys(modules).length > 0) this.#hydrationArgs = [...this.#hydrationArgs, modules];
 
         this.events = new Map();
         this.slashCommands = new Map();
@@ -244,8 +244,8 @@ export default class Handler extends EventEmitter {
         const folders = elements.filter((element) => element.isDirectory());
         const files = elements.filter((element) => element.isFile()).filter((element) => element.name.endsWith('.js'));
         return [
-            ...files.map((file) => this.#loadFile(path + '/' + file.name)),
-            ...folders.map((folder) => this.#loadFolder(path + '/' + folder.name)).flat(),
+            ...files.map((file) => this.#loadFile(folderPath + '/' + file.name)),
+            ...folders.map((folder) => this.#loadFolder(folderPath + '/' + folder.name)).flat(),
         ];
     }
     /**
@@ -262,7 +262,7 @@ export default class Handler extends EventEmitter {
                     }
                     if (!(file instanceof type)) continue;
 
-                    file.hydrate(...this.#options, this.#hydrationModules);
+                    file.hydrate(...this.#hydrationArgs);
 
                     callback(fileName, file);
 

@@ -113,9 +113,9 @@ export default class Logger {
             Logger.logPath = logpath ? path.join(getInstPath(), logpath) : null;
             Logger.fileStream = Logger.logPath
                 ? new Console({
-                    stdout: fs.createWriteStream(Logger.logPath, { flags: 'a+' }),
-                    stderr: fs.createWriteStream(Logger.logPath, { flags: 'a+' }),
-                })
+                      stdout: fs.createWriteStream(Logger.logPath, { flags: 'a+' }),
+                      stderr: fs.createWriteStream(Logger.logPath, { flags: 'a+' }),
+                  })
                 : null;
             Logger.info(`Logger module initialized`);
         } else throw new Error('Logger is already initialized');
