@@ -14,12 +14,8 @@ interface Emitter {
 interface HandlerOptions {
     emitters: [Emitter] | [];
     paths: { events?: string; commands?: string; interactions?: string };
-    modules?: { [key: string]: any };
+    modules?: Record<any, any>;
     options?: any[];
-}
-
-interface ExportedCommands {
-    [key: string]: object;
 }
 
 export default class Handler extends EventEmitter {
@@ -100,7 +96,7 @@ export default class Handler extends EventEmitter {
     /**
      * @description Patches an emitter to emit all events to a wildcard event
      */
-    #patchEmitter(name: string, emitter: EventEmitter): void {
+    #patchEmitter(name: string, emitter: EventEmitter) {
         const oldEmit = emitter.emit;
         const self = this;
         emitter.emit = function (event: string, ...args: any[]): boolean {
@@ -189,7 +185,7 @@ export default class Handler extends EventEmitter {
     /**
      * @description Moves all loaded events, commands and interactions to the old state and clears the current state
      */
-    #clear(): void {
+    #clear() {
         this.#oldstate = {
             events: new Map(this.events),
             eventWildCardCache: new Map(this.#eventWildCardCache),
@@ -215,7 +211,7 @@ export default class Handler extends EventEmitter {
     /**
      * @description Restores the old state
      */
-    #restore(): void {
+    #restore() {
         if (this.#oldstate) {
             this.events = this.#oldstate.events;
             this.#eventWildCardCache = this.#oldstate.eventWildCardCache;
@@ -333,8 +329,8 @@ export default class Handler extends EventEmitter {
     /**
      * @description Exports all the commands to a object of commands
      */
-    exportCommands(): ExportedCommands {
-        const commands: ExportedCommands = {};
+    exportCommands(): Record<string, any> {
+        const commands: Record<string, any> = {};
         for (const [name, command] of this.slashCommands) {
             commands[name] = command.data;
         }
@@ -344,8 +340,8 @@ export default class Handler extends EventEmitter {
     /**
      * @description Exports all the beta commands to a object of commands
      */
-    exportBetaCommands(): ExportedCommands {
-        const commands: ExportedCommands = {};
+    exportBetaCommands(): Record<string, any> {
+        const commands: Record<string, any> = {};
         for (const [name, command] of this.betaSlashCommands) {
             commands[name] = command.data;
         }

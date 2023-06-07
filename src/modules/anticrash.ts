@@ -6,7 +6,7 @@ export default class AntiCrash {
     /**
      * Initializes the AntiCrash module and errors if it has already been initialized
      */
-    static init(): void {
+    static init() {
         if (!AntiCrash.called) {
             AntiCrash.called = true;
             process.on('unhandledRejection', Logger.error);

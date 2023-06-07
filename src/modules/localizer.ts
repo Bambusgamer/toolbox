@@ -4,18 +4,8 @@ import { Languages } from '../util/statics';
 
 interface LanguagePack {
     defaultLanguage: string;
-    languages: {
-        [key: string]: string;
-    };
-    strings: {
-        [key: string]: {
-            [key: string]: string;
-        };
-    };
-}
-
-interface LocalizedStrings {
-    [key: string]: string;
+    languages: Record<string, string>;
+    strings: Record<string, Record<string, string>>;
 }
 
 export default class Localizer {
@@ -136,9 +126,9 @@ export default class Localizer {
     /**
      * @description Returns all possible strings and replaces the placeholders
      */
-    getAll(key: string, ...placeholders: (string | number)[]): LocalizedStrings {
+    getAll(key: string, ...placeholders: (string | number)[]): Record<string, string> {
         if (!key || typeof key !== 'string') throw new Error(`Invalid key ${key}`);
-        const strings: LocalizedStrings = {};
+        const strings: Record<string, string> = {};
         for (const [peerLanguage, language] of Object.entries(this.#languagePack.languages)) {
             if (peerLanguage !== language) continue;
             strings[peerLanguage] = this.get(language, key, ...placeholders);
