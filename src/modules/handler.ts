@@ -2,7 +2,13 @@ import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
 import Logger from './logger.js';
-import { default as CommandBuilder, SlashCommand, TextCommand } from '../classes/command.js';
+import {
+    BetaSlashCommand,
+    default as CommandBuilder,
+    ContextMenuCommand,
+    SlashCommand,
+    TextCommand,
+} from '../classes/command.js';
 import EventBuilder from '../classes/event.js';
 import InteractionBuilder from '../classes/interaction.js';
 
@@ -30,7 +36,8 @@ export default class Handler extends EventEmitter {
 
     events: Map<string, EventBuilder[]>;
     slashCommands: Map<string, SlashCommand>;
-    betaSlashCommands: Map<string, SlashCommand>;
+    betaSlashCommands: Map<string, BetaSlashCommand>;
+    contextMenus: Map<string, ContextMenuCommand>;
     textCommands: Map<string, TextCommand>;
     interactions: Map<string, InteractionBuilder>;
 
@@ -87,6 +94,7 @@ export default class Handler extends EventEmitter {
         this.events = new Map();
         this.slashCommands = new Map();
         this.betaSlashCommands = new Map();
+        this.contextMenus = new Map();
         this.textCommands = new Map();
         this.interactions = new Map();
 
@@ -190,16 +198,18 @@ export default class Handler extends EventEmitter {
             events: new Map(this.events),
             eventWildCardCache: new Map(this.#eventWildCardCache),
             slashCommands: new Map(this.slashCommands),
-            BetaSlashCommands: new Map(this.betaSlashCommands),
+            betaSlashCommands: new Map(this.betaSlashCommands),
+            contextMenus: new Map(this.contextMenus),
             textCommands: new Map(this.textCommands),
             interactions: new Map(this.interactions),
         };
         this.events.clear();
         this.#eventWildCardCache.clear();
-        this.interactions.clear();
         this.slashCommands.clear();
         this.betaSlashCommands.clear();
+        this.contextMenus.clear();
         this.textCommands.clear();
+        this.interactions.clear();
     }
     /**
      * @description Reloads all the events, commands and interactions. Returns true if successful
@@ -215,10 +225,11 @@ export default class Handler extends EventEmitter {
         if (this.#oldstate) {
             this.events = this.#oldstate.events;
             this.#eventWildCardCache = this.#oldstate.eventWildCardCache;
-            this.interactions = this.#oldstate.interactions;
             this.slashCommands = this.#oldstate.slashCommands;
-            this.betaSlashCommands = this.#oldstate.BetaSlashCommands;
+            this.betaSlashCommands = this.#oldstate.betaSlashCommands;
+            this.contextMenus = this.#oldstate.contextMenus;
             this.textCommands = this.#oldstate.textCommands;
+            this.interactions = this.#oldstate.interactions;
             Logger.infoy('Restored old state');
         }
     }
@@ -302,15 +313,20 @@ export default class Handler extends EventEmitter {
      */
     #loadCommands(): boolean {
         return this.#loadModules(this.#commandsPath, CommandBuilder, (fileName, command: CommandBuilder) => {
-            if (command.slash && command.customId) {
-                if (this.slashCommands.has(command.customId))
+            if (command.slash && command.slashName) {
+                if (this.slashCommands.has(command.slashName))
                     throw new Error(`${fileName} has a duplicate slash command id`);
-                this.slashCommands.set(command.customId, command.slash);
+                this.slashCommands.set(command.slashName, command.slash);
             }
-            if (command.betaSlash && command.betaCustomId) {
-                if (this.betaSlashCommands.has(command.betaCustomId))
+            if (command.betaSlash && command.betaSlashName) {
+                if (this.betaSlashCommands.has(command.betaSlashName))
                     throw new Error(`${fileName} has a duplicate beta slash command id`);
-                this.betaSlashCommands.set(command.betaCustomId, command.betaSlash);
+                this.betaSlashCommands.set(command.betaSlashName, command.betaSlash);
+            }
+            if (command.contextMenu && command.contextMenuName) {
+                if (this.contextMenus.has(command.contextMenuName))
+                    throw new Error(`${fileName} has a duplicate context menu id`);
+                this.contextMenus.set(command.contextMenuName, command.contextMenu);
             }
             if (command.text && command.name) {
                 if (this.textCommands.has(command.name))
@@ -343,6 +359,17 @@ export default class Handler extends EventEmitter {
     exportBetaCommands(): Record<string, any> {
         const commands: Record<string, any> = {};
         for (const [name, command] of this.betaSlashCommands) {
+            commands[name] = command.data;
+        }
+        return commands;
+    }
+
+    /**
+     * @description Exports all the context menus to a object of commands
+     */
+    exportContextMenus(): Record<string, any> {
+        const commands: Record<string, any> = {};
+        for (const [name, command] of this.contextMenus) {
             commands[name] = command.data;
         }
         return commands;

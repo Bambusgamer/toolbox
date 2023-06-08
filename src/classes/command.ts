@@ -10,6 +10,11 @@ interface BetaSlashCommandObject {
     callback: (...options: any[]) => Promise<any> | any;
 }
 
+interface ContextMenuCommandObject {
+    data: (...options: any[]) => any;
+    callback: (...options: any[]) => Promise<any> | any;
+}
+
 interface TextCommandData {
     name: string;
     aliases?: string[];
@@ -31,6 +36,7 @@ interface TextCommandObject {
 export default class CommandBuilder {
     slash: SlashCommandObject | undefined;
     betaSlash: BetaSlashCommandObject | undefined;
+    contextMenu: ContextMenuCommandObject | undefined;
     text: TextCommandObject | undefined;
 
     /**
@@ -53,10 +59,12 @@ export default class CommandBuilder {
     constructor({
         slash,
         betaSlash,
+        contextMenu,
         text,
     }: {
         slash?: SlashCommandObject;
         betaSlash?: BetaSlashCommandObject;
+        contextMenu?: ContextMenuCommandObject;
         text?: TextCommandObject;
     }) {
         if (slash && typeof slash !== 'object') throw new Error('Invalid slash command data');
@@ -74,12 +82,17 @@ export default class CommandBuilder {
             throw new Error('Beta slash command autocomplete must be of type function');
         if (betaSlash && (!betaSlash?.callback || typeof betaSlash?.callback !== 'function'))
             throw new Error('Beta slash command data must have a callback function');
+        if (contextMenu && (!contextMenu?.data || typeof contextMenu?.data !== 'function'))
+            throw new Error('Context menu command data must have a data function');
+        if (contextMenu && (!contextMenu?.callback || typeof contextMenu?.callback !== 'function'))
+            throw new Error('Context menu command data must have a callback function');
         if (text && (!text?.data || typeof text?.data !== 'function'))
             throw new Error('Text command data must have a data function');
         if (text && (!text?.callback || typeof text?.callback !== 'function'))
             throw new Error('Text command data must have a callback function');
         this.slash = slash;
         this.betaSlash = betaSlash;
+        this.contextMenu = contextMenu;
         this.text = text;
     }
 
@@ -98,6 +111,10 @@ export default class CommandBuilder {
                 this.betaSlash.autocomplete = this.betaSlash.autocomplete.bind(null, ...options);
             this.betaSlash.callback = this.betaSlash.callback.bind(null, ...options);
         }
+        if (this.contextMenu?.data) {
+            if (typeof this.contextMenu.data === 'function') this.contextMenu.data = this.contextMenu.data(...options);
+            this.contextMenu.callback = this.contextMenu.callback.bind(null, ...options);
+        }
         if (this.text?.data) {
             if (typeof this.text.data === 'function') this.text.data = this.text.data(...options);
             this.text.callback = this.text.callback.bind(null, ...options);
@@ -105,17 +122,24 @@ export default class CommandBuilder {
     }
 
     /**
-     * @description Returns the customId associated with the command
+     * @description Returns the name associated with the slash command
      */
-    get customId(): string | undefined {
+    get slashName(): string | undefined {
         return this.slash?.data?.name;
     }
 
     /**
-     * @description Returns the beta customId associated with the command
+     * @description Returns the name associated with the beta slash command
      */
-    get betaCustomId(): string | undefined {
+    get betaSlashName(): string | undefined {
         return this.betaSlash?.data?.name;
+    }
+
+    /**
+     * @description Returns the name associated with the context menu command
+     */
+    get contextMenuName(): string | undefined {
+        return this.contextMenu?.data?.name;
     }
 
     /**
@@ -144,4 +168,15 @@ type SlashCommand = {
     callback: (...args: any[]) => Promise<any> | any;
 };
 
-export { TextCommand, SlashCommand };
+type BetaSlashCommand = {
+    data: (...args: any[]) => any;
+    autocomplete?: (...args: any[]) => Promise<any> | any;
+    callback: (...args: any[]) => Promise<any> | any;
+};
+
+type ContextMenuCommand = {
+    data: (...args: any[]) => any;
+    callback: (...args: any[]) => Promise<any> | any;
+};
+
+export { TextCommand, SlashCommand, BetaSlashCommand, ContextMenuCommand };
