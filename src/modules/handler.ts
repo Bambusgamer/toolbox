@@ -3,14 +3,15 @@ import fs from 'fs';
 import path from 'path';
 import Logger from './logger.js';
 import {
-    BetaSlashCommand,
     default as CommandBuilder,
-    ContextMenuCommand,
-    SlashCommand,
-    TextCommand,
+    HydratedSlashCommand,
+    HydratedBetaSlashCommand,
+    HydratedContextMenuCommand,
+    HydratedTextCommand,
 } from '../classes/command.js';
 import EventBuilder from '../classes/event.js';
 import InteractionBuilder from '../classes/interaction.js';
+import { ChatInputApplicationCommandData, MessageApplicationCommandData, UserApplicationCommandData } from 'discord.js';
 
 interface Emitter {
     name: string;
@@ -35,10 +36,10 @@ export default class Handler extends EventEmitter {
     #hydrationArgs: any[] = [];
 
     events: Map<string, EventBuilder[]>;
-    slashCommands: Map<string, SlashCommand>;
-    betaSlashCommands: Map<string, BetaSlashCommand>;
-    contextMenus: Map<string, ContextMenuCommand>;
-    textCommands: Map<string, TextCommand>;
+    slashCommands: Map<string, HydratedSlashCommand>;
+    betaSlashCommands: Map<string, HydratedBetaSlashCommand>;
+    contextMenus: Map<string, HydratedContextMenuCommand>;
+    textCommands: Map<string, HydratedTextCommand>;
     interactions: Map<string, InteractionBuilder>;
 
     /**
@@ -238,9 +239,11 @@ export default class Handler extends EventEmitter {
      */
     #loadFile(filePath: string): { fileName: string; file: any } {
         delete require.cache[require.resolve(filePath)];
+        let file = require(filePath);
+        if (file.default) file = file.default;
         return {
             fileName: ((filePath.split('\\').pop() as string).split('/').pop() as string).split('.')[0],
-            file: require(filePath),
+            file,
         };
     }
     /**
@@ -345,8 +348,8 @@ export default class Handler extends EventEmitter {
     /**
      * @description Exports all the commands to a object of commands
      */
-    exportCommands(): Record<string, any> {
-        const commands: Record<string, any> = {};
+    exportCommands() {
+        const commands: Record<string, ChatInputApplicationCommandData> = {};
         for (const [name, command] of this.slashCommands) {
             commands[name] = command.data;
         }
@@ -356,8 +359,8 @@ export default class Handler extends EventEmitter {
     /**
      * @description Exports all the beta commands to a object of commands
      */
-    exportBetaCommands(): Record<string, any> {
-        const commands: Record<string, any> = {};
+    exportBetaCommands() {
+        const commands: Record<string, ChatInputApplicationCommandData> = {};
         for (const [name, command] of this.betaSlashCommands) {
             commands[name] = command.data;
         }
@@ -367,8 +370,8 @@ export default class Handler extends EventEmitter {
     /**
      * @description Exports all the context menus to a object of commands
      */
-    exportContextMenus(): Record<string, any> {
-        const commands: Record<string, any> = {};
+    exportContextMenus() {
+        const commands: Record<string, UserApplicationCommandData | MessageApplicationCommandData> = {};
         for (const [name, command] of this.contextMenus) {
             commands[name] = command.data;
         }

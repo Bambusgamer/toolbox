@@ -1,6 +1,7 @@
 interface InteractionOptions {
     customId: string;
     callback: (...args: any[]) => Promise<any> | any;
+    [key: string]: any;
 }
 
 export default class InteractionBuilder {

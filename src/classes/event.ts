@@ -3,6 +3,7 @@ interface EventOptions {
     once?: boolean;
     emitter?: string | null;
     callback: (...options: any[]) => Promise<any> | any;
+    options?: any;
 }
 
 export default class EventBuilder {

@@ -1,6 +1,6 @@
 {
     "name": "@bambusgamer/toolbox",
-    "version": "1.8.0",
+    "version": "2.0.0",
     "description": "",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -9,11 +9,11 @@
     "scripts": {
         "build": "rimraf ./dist && tsc",
         "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
-        "lint": "tslint -p tsconfig.json",
-        "publish": "npm publish"
+        "lint": "tslint -p tsconfig.json"
     },
     "dependencies": {
         "chalk": "^4.1.2",
+        "discord.js": "^14.11.0",
         "fs": "^0.0.1-security",
         "moment": "^2.29.4",
         "mongoose": "^6.6.7",
