@@ -1,16 +1,17 @@
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
-import Logger from './logger.js';
+import Logger from './logger';
 import {
     default as CommandBuilder,
     HydratedSlashCommand,
     HydratedBetaSlashCommand,
     HydratedContextMenuCommand,
     HydratedTextCommand,
-} from '../classes/command.js';
-import EventBuilder from '../classes/event.js';
-import InteractionBuilder from '../classes/interaction.js';
+} from '../classes/command';
+import EventBuilder from '../classes/event';
+import InteractionBuilder from '../classes/interaction';
+import ServiceBuilder from '../classes/service';
 import { ChatInputApplicationCommandData, MessageApplicationCommandData, UserApplicationCommandData } from 'discord.js';
 
 interface Emitter {
@@ -20,16 +21,18 @@ interface Emitter {
 
 interface HandlerOptions {
     emitters: [Emitter] | [];
-    paths: { events?: string; commands?: string; interactions?: string };
+    paths: { events?: string; commands?: string; interactions?: string; services?: string };
     modules?: Record<any, any>;
     options?: any[];
 }
 
 export default class Handler extends EventEmitter {
     #emitters: [Emitter] | [] = [];
+
     #eventsPath: string | null = null;
     #commandsPath: string | null = null;
     #interactionsPath: string | null = null;
+    #servicesPath: string | null = null;
     #oldstate: any = null;
     #eventWildCardCache: Map<string, string[]> = new Map();
 
@@ -41,6 +44,7 @@ export default class Handler extends EventEmitter {
     contextMenus: Map<string, HydratedContextMenuCommand>;
     textCommands: Map<string, HydratedTextCommand>;
     interactions: Map<string, InteractionBuilder>;
+    services: Map<string, ServiceBuilder>;
 
     /**
      * @description Returns the path from where the Handler was called
@@ -77,7 +81,7 @@ export default class Handler extends EventEmitter {
         }
         if (emitters) this.#emitters = emitters;
 
-        const { events, commands, interactions } = paths;
+        const { events, commands, interactions, services } = paths;
 
         if (events && typeof events !== 'string') throw new Error('Events path must be a string');
         if (events) this.#eventsPath = path.join(this.#getInstPath(), events);
@@ -85,6 +89,8 @@ export default class Handler extends EventEmitter {
         if (commands) this.#commandsPath = path.join(this.#getInstPath(), commands);
         if (interactions && typeof interactions !== 'string') throw new Error('Interactions path must be a string');
         if (interactions) this.#interactionsPath = path.join(this.#getInstPath(), interactions);
+        if (services && typeof services !== 'string') throw new Error('Services path must be a string');
+        if (services) this.#servicesPath = path.join(this.#getInstPath(), services);
 
         if (!Array.isArray(options)) throw new Error('Options must be an array');
         if (options.length > 0) this.#hydrationArgs = [...options];
@@ -98,10 +104,30 @@ export default class Handler extends EventEmitter {
         this.contextMenus = new Map();
         this.textCommands = new Map();
         this.interactions = new Map();
+        this.services = new Map();
 
         this.#patchEmitters();
         Logger.info('Handler module initialized');
     }
+
+    /**
+     * @description Stops all services
+     */
+    stopServices() {
+        for (const service of this.services.values()) {
+            service.stop();
+        }
+    }
+
+    /**
+     * @description Starts all services
+     */
+    startServices() {
+        for (const service of this.services.values()) {
+            service.start();
+        }
+    }
+
     /**
      * @description Patches an emitter to emit all events to a wildcard event
      */
@@ -113,6 +139,7 @@ export default class Handler extends EventEmitter {
             return oldEmit.call(this, event, ...args);
         };
     }
+
     /**
      * @description Patches all emitters to enable wildcard events
      */
@@ -121,6 +148,7 @@ export default class Handler extends EventEmitter {
             this.#patchEmitter(name, emitter);
         }
     }
+
     /**
      * @description Emits an event to all subscribed listeners
      */
@@ -184,17 +212,25 @@ export default class Handler extends EventEmitter {
             Logger.infoy('\nInteractions:');
             success = this.#loadInteractions() && success;
         }
+        if (this.#servicesPath) {
+            Logger.infoy('\nServices:');
+            success = this.#loadServices() && success;
+        }
         if (this.#commandsPath || this.#interactionsPath || this.#eventsPath) Logger.newline();
         if (!success) {
             Logger.warn('Handler failed to load');
             this.#restore();
         }
+        this.startServices();
         return success;
     }
+
     /**
      * @description Moves all loaded events, commands and interactions to the old state and clears the current state
      */
     #clear() {
+        this.stopServices();
+
         this.#oldstate = {
             events: new Map(this.events),
             eventWildCardCache: new Map(this.#eventWildCardCache),
@@ -203,6 +239,7 @@ export default class Handler extends EventEmitter {
             contextMenus: new Map(this.contextMenus),
             textCommands: new Map(this.textCommands),
             interactions: new Map(this.interactions),
+            services: new Map(this.services),
         };
         this.events.clear();
         this.#eventWildCardCache.clear();
@@ -211,7 +248,9 @@ export default class Handler extends EventEmitter {
         this.contextMenus.clear();
         this.textCommands.clear();
         this.interactions.clear();
+        this.services.clear();
     }
+
     /**
      * @description Reloads all the events, commands and interactions. Returns true if successful
      */
@@ -219,6 +258,7 @@ export default class Handler extends EventEmitter {
         this.#clear();
         return this.load();
     }
+
     /**
      * @description Restores the old state
      */
@@ -231,9 +271,11 @@ export default class Handler extends EventEmitter {
             this.contextMenus = this.#oldstate.contextMenus;
             this.textCommands = this.#oldstate.textCommands;
             this.interactions = this.#oldstate.interactions;
+            this.services = this.#oldstate.services;
             Logger.infoy('Restored old state');
         }
     }
+
     /**
      * @description Loads a file
      */
@@ -246,6 +288,7 @@ export default class Handler extends EventEmitter {
             file,
         };
     }
+
     /**
      * @description Loads a folder
      */
@@ -258,6 +301,7 @@ export default class Handler extends EventEmitter {
             ...folders.map((folder) => this.#loadFolder(folderPath + '/' + folder.name)).flat(),
         ];
     }
+
     /**
      * @description Loads all modules of a given type
      */
@@ -285,6 +329,7 @@ export default class Handler extends EventEmitter {
         }
         return success;
     }
+
     /**
      * @description Loads all the events from the events folder and its subfolders
      */
@@ -297,6 +342,7 @@ export default class Handler extends EventEmitter {
             this.events.set(event.name, listeners);
         });
     }
+
     /**
      * @description Loads all the interactions from the interactions folder and its subfolders
      */
@@ -311,6 +357,7 @@ export default class Handler extends EventEmitter {
             },
         );
     }
+
     /**
      * @description Loads all the commands from the commands folder and its subfolders
      */
@@ -345,6 +392,17 @@ export default class Handler extends EventEmitter {
             }
         });
     }
+
+    /**
+     * @description Loads all the services from the services folder and its subfolders
+     */
+    #loadServices(): boolean {
+        return this.#loadModules(this.#servicesPath, ServiceBuilder, (fileName, service: ServiceBuilder) => {
+            if (this.services.has(service.id)) throw new Error(`${fileName} has a duplicate service name`);
+            this.services.set(service.id, service);
+        });
+    }
+
     /**
      * @description Exports all the commands to a object of commands
      */

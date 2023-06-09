@@ -7,6 +7,7 @@ export { default as Mongoose } from './modules/mongoose';
 export { default as CommandBuilder } from './classes/command';
 export { default as EventBuilder } from './classes/event';
 export { default as InteractionBuilder } from './classes/interaction';
+export { default as ServiceBuilder } from './classes/service';
 export * from './util/statics';
 export { default as ColorProvider } from './util/ColorProvider';
 export { default as BitfieldUtility } from './util/bitfieldUtility';

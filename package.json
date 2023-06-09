@@ -1,6 +1,6 @@
 {
     "name": "@bambusgamer/toolbox",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "description": "",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "chalk": "^4.1.2",
+        "cron": "^2.3.1",
         "discord.js": "^14.11.0",
         "fs": "^0.0.1-security",
         "moment": "^2.29.4",
@@ -20,6 +21,7 @@
         "path": "^0.12.7"
     },
     "devDependencies": {
+        "@types/cron": "^2.0.1",
         "prettier": "^2.8.8",
         "rimraf": "^5.0.1",
         "tslint": "^6.1.3",
