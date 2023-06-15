@@ -20,14 +20,14 @@ interface Emitter {
 }
 
 interface HandlerOptions {
-    emitters: [Emitter] | [];
+    emitters: Emitter[];
     paths: { events?: string; commands?: string; interactions?: string; services?: string };
     modules?: Record<any, any>;
     options?: any[];
 }
 
 export default class Handler extends EventEmitter {
-    #emitters: [Emitter] | [] = [];
+    #emitters: Emitter[] = [];
 
     #eventsPath: string | null = null;
     #commandsPath: string | null = null;
