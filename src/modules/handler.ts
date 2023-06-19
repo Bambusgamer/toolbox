@@ -170,7 +170,11 @@ export default class Handler extends EventEmitter {
                     once: eventData.once,
                     emitter: eventData.emitter,
                     async callback(...args: any[]) {
-                        if (await eventData.matchCallback(...args)) callback(...args);
+                        try {
+                            if (await eventData.matchCallback(...args)) callback(...args);
+                        } catch (error) {
+                            Logger.error('Error while executing service power event callback', error);
+                        }
                     },
                 }),
             );

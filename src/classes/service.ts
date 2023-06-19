@@ -1,4 +1,5 @@
 import { CronJob } from 'cron';
+import Logger from '../modules/logger';
 
 interface ServiceOptions {
     id: string;
@@ -15,26 +16,28 @@ interface ServiceOptions {
         emitter?: string | null;
         matchCallback?: (...args: any[]) => Promise<boolean> | boolean;
     };
+    preRun?: (...args: any[]) => Promise<boolean> | boolean;
     callback: (...options: any[]) => Promise<any> | any;
     options?: any;
 }
 
 export default class ServiceBuilder {
-    readonly id: string;
-    readonly cron: string;
-    readonly autostart: boolean = true;
-    readonly startup: {
+    id: string;
+    cron: string;
+    autostart: boolean = true;
+    startup: {
         event: string | null;
         once: boolean;
         emitter: string | null;
         matchCallback: (...args: any[]) => Promise<boolean> | boolean;
     };
-    readonly shutdown: {
+    shutdown: {
         event: string | null;
         once: boolean;
         emitter: string | null;
         matchCallback: (...args: any[]) => Promise<boolean> | boolean;
     };
+    preRun: (...args: any[]) => Promise<boolean> | boolean;
     callback: (...args: any[]) => Promise<any> | any;
     [key: string]: any;
 
@@ -53,7 +56,7 @@ export default class ServiceBuilder {
      *    },
      * });
      */
-    constructor({ id, cron, callback, startup, shutdown, ...options }: ServiceOptions) {
+    constructor({ id, cron, preRun, callback, startup, shutdown, ...options }: ServiceOptions) {
         this.id = id;
         this.cron = cron;
         this.callback = callback;
@@ -64,6 +67,7 @@ export default class ServiceBuilder {
 
         this.startup = startupConfig;
         this.shutdown = shutdownConfig;
+        this.preRun = preRun || (() => true);
 
         if (typeof startupConfig.event === 'string') this.autostart = false;
 
@@ -77,6 +81,7 @@ export default class ServiceBuilder {
      */
     hydrate(...options: any[]) {
         this.callback = this.callback.bind(null, ...options);
+        this.preRun = this.preRun.bind(null, ...options);
     }
 
     /**
@@ -84,7 +89,13 @@ export default class ServiceBuilder {
      */
     start() {
         if (!this.job) {
-            this.job = new CronJob(this.cron, () => this.callback());
+            this.job = new CronJob(this.cron, async () => {
+                try {
+                    if (await this.preRun()) await this.callback();
+                } catch (error) {
+                    Logger.error('Error while running preRun of service', error);
+                }
+            });
             this.job.start();
         }
     }
