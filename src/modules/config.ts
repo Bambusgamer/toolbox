@@ -21,7 +21,6 @@ export default class Config {
      * @description Initializes the config
      */
     constructor(configPath: string) {
-        if (!configPath || typeof configPath !== 'string') throw new Error('Invalid config path');
         this.#configPath = path.join(this.#getInstPath(), configPath);
         this.reload();
     }

@@ -27,9 +27,6 @@ export default class EventBuilder {
      * });
      */
     constructor({ name, once = false, emitter = null, callback, ...options }: EventOptions) {
-        if (!name || typeof name !== 'string') throw new Error('Invalid event name');
-        if (emitter && typeof emitter !== 'string') throw new Error('Invalid event emitter');
-        if (!callback || typeof callback !== 'function') throw new Error('Invalid event callback');
         this.name = name;
         this.once = once;
         this.emitter = emitter;

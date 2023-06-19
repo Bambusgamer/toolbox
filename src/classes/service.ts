@@ -3,13 +3,38 @@ import { CronJob } from 'cron';
 interface ServiceOptions {
     id: string;
     cron: string;
+    startup?: {
+        event: string | null;
+        once?: boolean;
+        emitter?: string | null;
+        matchCallback?: (...args: any[]) => Promise<boolean> | boolean;
+    };
+    shutdown?: {
+        event: string | null;
+        once?: boolean;
+        emitter?: string | null;
+        matchCallback?: (...args: any[]) => Promise<boolean> | boolean;
+    };
     callback: (...options: any[]) => Promise<any> | any;
     options?: any;
 }
 
 export default class ServiceBuilder {
-    id: string;
-    cron: string;
+    readonly id: string;
+    readonly cron: string;
+    readonly autostart: boolean = true;
+    readonly startup: {
+        event: string | null;
+        once: boolean;
+        emitter: string | null;
+        matchCallback: (...args: any[]) => Promise<boolean> | boolean;
+    };
+    readonly shutdown: {
+        event: string | null;
+        once: boolean;
+        emitter: string | null;
+        matchCallback: (...args: any[]) => Promise<boolean> | boolean;
+    };
     callback: (...args: any[]) => Promise<any> | any;
     [key: string]: any;
 
@@ -28,15 +53,19 @@ export default class ServiceBuilder {
      *    },
      * });
      */
-    constructor({ id, cron, callback, ...options }: ServiceOptions) {
-        if (!id || typeof id !== 'string') throw new Error('Invalid service id');
-        if (!cron && typeof cron !== 'string') throw new Error('Invalid service cron');
-        if (!callback || typeof callback !== 'function') throw new Error('Invalid service callback');
-        if (options && typeof options !== 'object') throw new Error('Invalid service options');
-
+    constructor({ id, cron, callback, startup, shutdown, ...options }: ServiceOptions) {
         this.id = id;
         this.cron = cron;
         this.callback = callback;
+
+        const powerConfig = { event: null, once: false, emitter: null, matchCallback: () => true };
+        const startupConfig = { ...powerConfig, ...startup };
+        const shutdownConfig = { ...powerConfig, ...shutdown };
+
+        this.startup = startupConfig;
+        this.shutdown = shutdownConfig;
+
+        if (typeof startupConfig.event === 'string') this.autostart = false;
 
         for (const [key, value] of Object.entries(options)) {
             this[key] = value;

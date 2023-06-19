@@ -71,31 +71,17 @@ export default class Handler extends EventEmitter {
     constructor({ emitters = [], paths, modules = {}, options = [] }: HandlerOptions) {
         super();
 
-        if (!Array.isArray(emitters)) throw new Error('Emitters must be an array');
-        for (const emitter of emitters) {
-            if (typeof emitter !== 'object') throw new Error('Emitters must be an array of objects');
-            if (!emitter.name || typeof emitter.name !== 'string')
-                throw new Error('Emitters must have a name property');
-            if (!emitter.emitter || !(emitter.emitter instanceof EventEmitter))
-                throw new Error('Emitters must have a emitter property that is an EventEmitter');
-        }
         if (emitters) this.#emitters = emitters;
 
         const { events, commands, interactions, services } = paths;
 
-        if (events && typeof events !== 'string') throw new Error('Events path must be a string');
         if (events) this.#eventsPath = path.join(this.#getInstPath(), events);
-        if (commands && typeof commands !== 'string') throw new Error('Commands path must be a string');
         if (commands) this.#commandsPath = path.join(this.#getInstPath(), commands);
-        if (interactions && typeof interactions !== 'string') throw new Error('Interactions path must be a string');
         if (interactions) this.#interactionsPath = path.join(this.#getInstPath(), interactions);
-        if (services && typeof services !== 'string') throw new Error('Services path must be a string');
         if (services) this.#servicesPath = path.join(this.#getInstPath(), services);
 
-        if (!Array.isArray(options)) throw new Error('Options must be an array');
         if (options.length > 0) this.#hydrationArgs = [...options];
 
-        if (typeof modules !== 'object') throw new Error('Hydration modules must be an object');
         if (Object.keys(modules).length > 0) this.#hydrationArgs = [...this.#hydrationArgs, modules];
 
         this.events = new Map();
@@ -124,7 +110,7 @@ export default class Handler extends EventEmitter {
      */
     startServices() {
         for (const service of this.services.values()) {
-            service.start();
+            if (service.autostart) service.start();
         }
     }
 
@@ -147,6 +133,65 @@ export default class Handler extends EventEmitter {
         for (const { name, emitter } of this.#emitters) {
             this.#patchEmitter(name, emitter);
         }
+    }
+
+    /**
+     * @description Registers a service event
+     */
+    #registerServiceEvent(event: EventBuilder) {
+        event.hydrate(...this.#hydrationArgs);
+
+        let listeners = this.events.get(event.name);
+        if (!listeners) {
+            listeners = [event];
+        } else listeners.push(event);
+        this.events.set(event.name, listeners);
+    }
+
+    /**
+     * @description Adds a service power event to the event list
+     */
+    #addServicePowerEvent({
+        eventData,
+        callback,
+    }: {
+        eventData: {
+            event: string | null;
+            once: boolean;
+            emitter: string | null;
+            matchCallback: (...args: any[]) => Promise<boolean> | boolean;
+        };
+        callback: (...options: any[]) => Promise<any> | any;
+    }) {
+        if (eventData.event)
+            this.#registerServiceEvent(
+                new EventBuilder({
+                    name: eventData.event,
+                    once: eventData.once,
+                    emitter: eventData.emitter,
+                    async callback(...args: any[]) {
+                        if (await eventData.matchCallback(...args)) callback(...args);
+                    },
+                }),
+            );
+    }
+
+    /**
+     * @description Returns all listeners with a wildcard that match the given event
+     */
+    #eventsWildcard(event: string): string[] {
+        const cached = this.#eventWildCardCache.get(event);
+
+        if (cached) return cached;
+
+        const events = [];
+
+        for (const [eventName, listeners] of this.events) {
+            if (this.matchWildcard(eventName, event)) events.push(eventName);
+        }
+
+        this.#eventWildCardCache.set(event, events);
+        return events;
     }
 
     /**
@@ -178,24 +223,6 @@ export default class Handler extends EventEmitter {
     }
 
     /**
-     * @description Returns all listeners with a wildcard that match the given event
-     */
-    #eventsWildcard(event: string): string[] {
-        const cached = this.#eventWildCardCache.get(event);
-
-        if (cached) return cached;
-
-        const events = [];
-
-        for (const [eventName, listeners] of this.events) {
-            if (this.matchWildcard(eventName, event)) events.push(eventName);
-        }
-
-        this.#eventWildCardCache.set(event, events);
-        return events;
-    }
-
-    /**
      * @description Loads all events, commands and interactions. Returns true if all loaded successfully
      */
     load(): boolean {
@@ -216,7 +243,7 @@ export default class Handler extends EventEmitter {
             Logger.infoy('\nServices:');
             success = this.#loadServices() && success;
         }
-        if (this.#commandsPath || this.#interactionsPath || this.#eventsPath) Logger.newline();
+        if (this.#commandsPath || this.#interactionsPath || this.#eventsPath || this.#servicesPath) Logger.newline();
         if (!success) {
             Logger.warn('Handler failed to load');
             this.#restore();
@@ -351,8 +378,7 @@ export default class Handler extends EventEmitter {
             this.#interactionsPath,
             InteractionBuilder,
             (fileName, interaction: InteractionBuilder) => {
-                if (this.interactions.has(interaction.name))
-                    throw new Error(`${fileName} has a duplicate interaction name`);
+                if (this.interactions.has(interaction.name)) throw new Error(`${fileName} has a duplicate customId`);
                 this.interactions.set(interaction.name, interaction);
             },
         );
@@ -365,17 +391,17 @@ export default class Handler extends EventEmitter {
         return this.#loadModules(this.#commandsPath, CommandBuilder, (fileName, command: CommandBuilder) => {
             if (command.slash && command.slashName) {
                 if (this.slashCommands.has(command.slashName))
-                    throw new Error(`${fileName} has a duplicate slash command id`);
+                    throw new Error(`${fileName} has a duplicate slash command name`);
                 this.slashCommands.set(command.slashName, command.slash);
             }
             if (command.betaSlash && command.betaSlashName) {
                 if (this.betaSlashCommands.has(command.betaSlashName))
-                    throw new Error(`${fileName} has a duplicate beta slash command id`);
+                    throw new Error(`${fileName} has a duplicate beta slash command name`);
                 this.betaSlashCommands.set(command.betaSlashName, command.betaSlash);
             }
             if (command.contextMenu && command.contextMenuName) {
                 if (this.contextMenus.has(command.contextMenuName))
-                    throw new Error(`${fileName} has a duplicate context menu id`);
+                    throw new Error(`${fileName} has a duplicate context menu command name`);
                 this.contextMenus.set(command.contextMenuName, command.contextMenu);
             }
             if (command.text && command.name) {
@@ -398,7 +424,21 @@ export default class Handler extends EventEmitter {
      */
     #loadServices(): boolean {
         return this.#loadModules(this.#servicesPath, ServiceBuilder, (fileName, service: ServiceBuilder) => {
-            if (this.services.has(service.id)) throw new Error(`${fileName} has a duplicate service name`);
+            if (this.services.has(service.id)) throw new Error(`${fileName} has a duplicate service id`);
+
+            this.#addServicePowerEvent({
+                eventData: service.startup,
+                callback: () => {
+                    service.start();
+                },
+            });
+            this.#addServicePowerEvent({
+                eventData: service.shutdown,
+                callback: () => {
+                    service.stop();
+                },
+            });
+
             this.services.set(service.id, service);
         });
     }
