@@ -39,7 +39,7 @@ export default class ServiceBuilder {
     };
     preRun: (...args: any[]) => Promise<boolean> | boolean;
     callback: (...args: any[]) => Promise<any> | any;
-    [key: string]: any;
+    options: any;
 
     private job: CronJob | undefined;
 
@@ -56,7 +56,7 @@ export default class ServiceBuilder {
      *    },
      * });
      */
-    constructor({ id, cron, preRun, callback, startup, shutdown, ...options }: ServiceOptions) {
+    constructor({ id, cron, preRun, callback, startup, shutdown, options = {} }: ServiceOptions) {
         this.id = id;
         this.cron = cron;
         this.callback = callback;
@@ -71,9 +71,7 @@ export default class ServiceBuilder {
 
         if (typeof startupConfig.event === 'string') this.autostart = false;
 
-        for (const [key, value] of Object.entries(options)) {
-            this[key] = value;
-        }
+        this.options = options;
     }
 
     /**

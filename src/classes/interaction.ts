@@ -1,13 +1,13 @@
 interface InteractionOptions {
     customId: string;
     callback: (...args: any[]) => Promise<any> | any;
-    [key: string]: any;
+    options?: any;
 }
 
 export default class InteractionBuilder {
     customId: string;
     callback: (...args: any[]) => Promise<any> | any;
-    [key: string]: any;
+    options: any;
 
     /**
      * @description Creates a new Interaction
@@ -21,12 +21,11 @@ export default class InteractionBuilder {
      *   }
      * });
      */
-    constructor({ customId, callback, ...options }: InteractionOptions) {
+    constructor({ customId, callback, options = {} }: InteractionOptions) {
         this.customId = customId;
         this.callback = callback;
-        for (const [key, value] of Object.entries(options)) {
-            this[key] = value;
-        }
+
+        this.options = options;
     }
 
     /**

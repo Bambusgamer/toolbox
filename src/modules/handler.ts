@@ -14,27 +14,30 @@ import InteractionBuilder from '../classes/interaction';
 import ServiceBuilder from '../classes/service';
 import { ChatInputApplicationCommandData, MessageApplicationCommandData, UserApplicationCommandData } from 'discord.js';
 
-interface Emitter {
+interface EmittersItem {
     name: string;
     emitter: EventEmitter;
 }
 
 interface HandlerOptions {
-    emitters: Emitter[];
+    emitters: EmittersItem[];
     paths: { events?: string; commands?: string; interactions?: string; services?: string };
     modules?: Record<any, any>;
     options?: any[];
 }
 
 export default class Handler extends EventEmitter {
-    #emitters: Emitter[] = [];
+    #emitters: EmittersItem[] = [];
 
     #eventsPath: string | null = null;
     #commandsPath: string | null = null;
     #interactionsPath: string | null = null;
     #servicesPath: string | null = null;
+
     #oldstate: any = null;
+
     #eventWildCardCache: Map<string, string[]> = new Map();
+    #emitterWildCardCache: Map<string, string[]> = new Map();
 
     #hydrationArgs: any[] = [];
 
@@ -45,6 +48,8 @@ export default class Handler extends EventEmitter {
     textCommands: Map<string, HydratedTextCommand>;
     interactions: Map<string, InteractionBuilder>;
     services: Map<string, ServiceBuilder>;
+
+    #_ready = false;
 
     /**
      * @description Returns the path from where the Handler was called
@@ -71,6 +76,8 @@ export default class Handler extends EventEmitter {
     constructor({ emitters = [], paths, modules = {}, options = [] }: HandlerOptions) {
         super();
 
+        this.setMaxListeners(0);
+
         if (emitters) this.#emitters = emitters;
 
         const { events, commands, interactions, services } = paths;
@@ -94,6 +101,15 @@ export default class Handler extends EventEmitter {
 
         this.#patchEmitters();
         Logger.info('Handler module initialized');
+    }
+
+    set #ready(ready: boolean) {
+        this.#_ready = ready;
+        if (ready) this.emit('ready');
+    }
+
+    get #ready(): boolean {
+        return this.#_ready;
     }
 
     /**
@@ -181,7 +197,7 @@ export default class Handler extends EventEmitter {
     }
 
     /**
-     * @description Returns all listeners with a wildcard that match the given event
+     * @description Returns all events that match a wildcard event
      */
     #eventsWildcard(event: string): string[] {
         const cached = this.#eventWildCardCache.get(event);
@@ -199,28 +215,61 @@ export default class Handler extends EventEmitter {
     }
 
     /**
+     * @description Returns all emitters that match a wildcard emitter
+     */
+    #emittersWildcard(emitter: string): string[] {
+        const cached = this.#emitterWildCardCache.get(emitter);
+
+        if (cached) return cached;
+
+        const emitters = [];
+
+        for (const { name } of this.#emitters) {
+            if (this.matchWildcard(name, emitter)) emitters.push(name);
+        }
+
+        this.#emitterWildCardCache.set(emitter, emitters);
+        return emitters;
+    }
+
+    /**
+     * @description Awaits for the handler to be ready
+     */
+    #awaitReady(): Promise<void> {
+        return new Promise((resolve) => {
+            this.once('ready', () => resolve());
+        });
+    }
+
+    /**
      * @description Emits an event to all subscribed listeners
      */
-    #emit(emitter: string, event: string, ...args: any[]) {
+    async #emit(emitter: string, event: string, ...args: any[]) {
+        if (!this.#ready) await this.#awaitReady();
+
         const matchedEvents = this.#eventsWildcard(event);
 
         for (const matchedEvent of matchedEvents) {
             const listeners = this.events.get(matchedEvent);
             if (!listeners) return;
+
             for (const listener of listeners) {
-                if (typeof listener?.emitter === 'string' && listener.emitter !== emitter) continue;
+                const matchedEmitters = this.#emittersWildcard(listener.emitter || '');
+
+                if (typeof listener.emitter === 'string' && !matchedEmitters.includes(emitter)) continue;
                 try {
                     listener.callback(...args);
-                } catch (err) {
-                    Logger.error([err, `Error in event ${matchedEvent}`]);
+                } catch (error) {
+                    Logger.error([error, `Error in event ${matchedEvent}`]);
                 }
             }
 
             this.events.set(
                 matchedEvent,
                 listeners.filter((listener) => {
-                    if (typeof listener?.emitter === 'string' && listener.emitter !== emitter) return true;
-                    return !listener?.once;
+                    const matchedEmitters = this.#emittersWildcard(listener.emitter || '');
+                    if (typeof listener.emitter === 'string' && !matchedEmitters.includes(emitter)) return true;
+                    return !listener.once;
                 }),
             );
         }
@@ -253,6 +302,7 @@ export default class Handler extends EventEmitter {
             this.#restore();
         }
         this.startServices();
+        this.#ready = true;
         return success;
     }
 
@@ -260,11 +310,13 @@ export default class Handler extends EventEmitter {
      * @description Moves all loaded events, commands and interactions to the old state and clears the current state
      */
     #clear() {
+        this.#ready = false;
         this.stopServices();
 
         this.#oldstate = {
             events: new Map(this.events),
             eventWildCardCache: new Map(this.#eventWildCardCache),
+            emitterWildCardCache: new Map(this.#emitterWildCardCache),
             slashCommands: new Map(this.slashCommands),
             betaSlashCommands: new Map(this.betaSlashCommands),
             contextMenus: new Map(this.contextMenus),
@@ -274,6 +326,7 @@ export default class Handler extends EventEmitter {
         };
         this.events.clear();
         this.#eventWildCardCache.clear();
+        this.#emitterWildCardCache.clear();
         this.slashCommands.clear();
         this.betaSlashCommands.clear();
         this.contextMenus.clear();
@@ -297,6 +350,7 @@ export default class Handler extends EventEmitter {
         if (this.#oldstate) {
             this.events = this.#oldstate.events;
             this.#eventWildCardCache = this.#oldstate.eventWildCardCache;
+            this.#emitterWildCardCache = this.#oldstate.emitterWildCardCache;
             this.slashCommands = this.#oldstate.slashCommands;
             this.betaSlashCommands = this.#oldstate.betaSlashCommands;
             this.contextMenus = this.#oldstate.contextMenus;

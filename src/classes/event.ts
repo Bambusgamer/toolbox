@@ -11,7 +11,7 @@ export default class EventBuilder {
     once: boolean;
     emitter: string | null;
     callback: (...args: any[]) => Promise<any> | any;
-    [key: string]: any;
+    options: any;
 
     /**
      * @description Creates a new Event
@@ -26,14 +26,13 @@ export default class EventBuilder {
      *    },
      * });
      */
-    constructor({ name, once = false, emitter = null, callback, ...options }: EventOptions) {
+    constructor({ name, once = false, emitter = null, callback, options = {} }: EventOptions) {
         this.name = name;
         this.once = once;
         this.emitter = emitter;
         this.callback = callback;
-        for (const [key, value] of Object.entries(options)) {
-            this[key] = value;
-        }
+
+        this.options = options;
     }
 
     /**
