@@ -6,6 +6,7 @@ interface ServiceOptions {
     cron: string;
     startup?: {
         event: string | null;
+        firstLoadOnly?: boolean;
         once?: boolean;
         emitter?: string | null;
         matchCallback?: (...args: any[]) => Promise<boolean> | boolean;
@@ -27,12 +28,14 @@ export default class ServiceBuilder {
     autostart: boolean = true;
     startup: {
         event: string | null;
+        firstLoadOnly: boolean;
         once: boolean;
         emitter: string | null;
         matchCallback: (...args: any[]) => Promise<boolean> | boolean;
     };
     shutdown: {
         event: string | null;
+        firstLoadOnly: boolean;
         once: boolean;
         emitter: string | null;
         matchCallback: (...args: any[]) => Promise<boolean> | boolean;
@@ -61,7 +64,13 @@ export default class ServiceBuilder {
         this.cron = cron;
         this.callback = callback;
 
-        const powerConfig = { event: null, once: false, emitter: null, matchCallback: () => true };
+        const powerConfig = {
+            event: null,
+            firstLoadOnly: false,
+            once: false,
+            emitter: null,
+            matchCallback: () => true,
+        };
         const startupConfig = { ...powerConfig, ...startup };
         const shutdownConfig = { ...powerConfig, ...shutdown };
 

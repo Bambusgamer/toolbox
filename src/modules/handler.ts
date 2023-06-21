@@ -50,6 +50,7 @@ export default class Handler extends EventEmitter {
     services: Map<string, ServiceBuilder>;
 
     #_ready = false;
+    #loadCount = 0;
 
     /**
      * @description Returns the path from where the Handler was called
@@ -127,6 +128,7 @@ export default class Handler extends EventEmitter {
     startServices() {
         for (const service of this.services.values()) {
             if (service.autostart) service.start();
+            else if (service.startup.firstLoadOnly && this.#loadCount !== 0) service.start();
         }
     }
 
@@ -173,13 +175,14 @@ export default class Handler extends EventEmitter {
     }: {
         eventData: {
             event: string | null;
+            firstLoadOnly: boolean;
             once: boolean;
             emitter: string | null;
             matchCallback: (...args: any[]) => Promise<boolean> | boolean;
         };
         callback: (...options: any[]) => Promise<any> | any;
     }) {
-        if (eventData.event)
+        if (eventData.event && ((eventData.firstLoadOnly && this.#loadCount === 0) || !eventData.firstLoadOnly))
             this.#registerServiceEvent(
                 new EventBuilder({
                     name: eventData.event,
@@ -303,6 +306,7 @@ export default class Handler extends EventEmitter {
         }
         this.startServices();
         this.#ready = true;
+        this.#loadCount++;
         return success;
     }
 
