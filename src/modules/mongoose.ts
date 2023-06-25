@@ -3,9 +3,9 @@ import Logger from './logger';
 import { setTimeout } from 'timers/promises';
 
 export default class Mongoose {
-    static init(uri: string) {
+    static init(uri: string, options?: mongoose.ConnectOptions) {
         if (!uri || typeof uri !== 'string') throw new Error('No database config present');
-        const connect = () => mongoose.connect(uri).catch(Logger.error);
+        const connect = () => mongoose.connect(uri, options).catch(Logger.error);
 
         mongoose.set('strictQuery', true);
         mongoose.connection.on('connected', () => Logger.info(`√ Connected to MongoDB!`));

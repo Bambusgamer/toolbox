@@ -74,7 +74,7 @@ export default class Handler extends EventEmitter {
     /**
      * @description Initializes the handler module
      */
-    constructor({ emitters = [], paths, modules = {}, options = [] }: HandlerOptions) {
+    constructor({ emitters = [], paths = {}, modules = {}, options = [] }: HandlerOptions) {
         super();
 
         this.setMaxListeners(0);
@@ -284,23 +284,28 @@ export default class Handler extends EventEmitter {
     load(): boolean {
         let success = false;
         if (this.#commandsPath) {
-            Logger.infoy('\nCommands:');
+            Logger.newline();
+            Logger.infoy('Commands:');
             success = this.#loadCommands();
         }
         if (this.#eventsPath) {
-            Logger.infoy('\nEvents:');
+            Logger.newline();
+            Logger.infoy('Events:');
             success = this.#loadEvents() && success;
         }
         if (this.#interactionsPath) {
-            Logger.infoy('\nInteractions:');
+            Logger.newline();
+            Logger.infoy('Interactions:');
             success = this.#loadInteractions() && success;
         }
         if (this.#servicesPath) {
-            Logger.infoy('\nServices:');
+            Logger.newline();
+            Logger.infoy('Services:');
             success = this.#loadServices() && success;
         }
         if (this.#commandsPath || this.#interactionsPath || this.#eventsPath || this.#servicesPath) Logger.newline();
         if (!success) {
+            Logger.newline();
             Logger.warn('Handler failed to load');
             this.#restore();
         }
