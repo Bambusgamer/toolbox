@@ -1,6 +1,6 @@
 {
     "name": "@bambusgamer/toolbox",
-    "version": "5.0.0",
+    "version": "5.1.0",
     "description": "",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -17,7 +17,7 @@
         "discord.js": "^14.11.0",
         "fs": "^0.0.1-security",
         "moment": "^2.29.4",
-        "mongoose": "^6.6.7",
+        "mongoose": "^7.3.1",
         "path": "^0.12.7"
     },
     "devDependencies": {
