@@ -282,7 +282,7 @@ export default class Handler extends EventEmitter {
      * @description Loads all events, commands and interactions. Returns true if all loaded successfully
      */
     load(): boolean {
-        let success = false;
+        let success = true;
         if (this.#commandsPath) {
             Logger.newline();
             Logger.infoy('Commands:');
